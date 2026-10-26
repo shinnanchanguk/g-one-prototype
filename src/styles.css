@@ -408,8 +408,10 @@ i { display: inline-block; width: 1px; height: 0.8em; background: var(--line); m
 .cal__cell.is-today { box-shadow: inset 0 0 0 2px var(--orange); }
 .cal__day { font-family: var(--mono); font-size: 12px; font-weight: 700; }
 .cal__ev { text-align: left; font-size: 11.5px; padding: 3px 7px; border-radius: 8px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ev--do { background: #fde5d8; color: #a53c0b; border-left: 3px solid var(--orange); }
-.ev--office { background: #e1eafb; color: #174da8; border-left: 3px solid var(--blue); }
+.ev--do { background: var(--ink); color: #fff; }
+.ev--office { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.ev--do .cal__ev-school { color: rgba(255, 255, 255, 0.7); } .ev--office .cal__ev-school { color: var(--muted); }
+.legend .cal__ev { display: inline-block; pointer-events: none; }
 .cal__ev:hover { filter: brightness(0.95); }
 .cal__ev-subj { font-weight: 800; }
 .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; justify-content: center; }

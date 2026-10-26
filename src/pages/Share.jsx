@@ -50,7 +50,7 @@ export function OpenClasses() {
           {view === 'cal' ? (
             <Panel>
               <MonthCalendar year={ym[0]} month={ym[1]} items={list} onOpen={setOpen} onMove={move} />
-              <ul className="legend"><li><span className="dot bg-orange" />도 단위 공개</li><li><span className="dot bg-blue" />지원청 단위 공개</li></ul>
+              <ul className="legend"><li><span className="cal__ev ev--do">도</span>도 단위 공개</li><li><span className="cal__ev ev--office">지원청</span>지원청 단위 공개</li></ul>
             </Panel>
           ) : (
             <div className="mapwrap">
