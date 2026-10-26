@@ -245,7 +245,8 @@ i { display: inline-block; width: 1px; height: 0.8em; background: var(--line); m
 .row-end { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; align-items: center; }
 
 /* ── 아바타·진척 ── */
-.avatar { display: inline-grid; place-items: center; border-radius: 50%; font-weight: 800; color: #fff; flex: none; font-family: var(--ui); }
+.avatar { display: inline-grid; place-items: center; border-radius: 50%; font-weight: 800; flex: none; font-family: var(--ui); }
+span.avatar.avatar { color: #fff; }
 .avatar--blue { background: var(--blue); } .avatar--green { background: #2f7a46; } .avatar--orange { background: var(--orange); }
 .avatar--purple { background: var(--purple); } .avatar--yellow { background: var(--yellow); } .avatar--pink { background: var(--pink); } .avatar--sky { background: var(--sky); }
 .progress { height: 6px; max-height: 6px; min-height: 6px; background: rgba(17, 17, 17, 0.08); border-radius: 3px; overflow: hidden; flex: 1 1 0; }
