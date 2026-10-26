@@ -4,3 +4,4 @@ _ref/
 _verify/
 .claude/
 .DS_Store
+.vercel
