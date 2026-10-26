@@ -47,7 +47,7 @@ export default function GrowthDesign() {
 
   useEffect(() => {
     if (step === 4 && res && !goal) {
-      setGoal(res.type.title.replace(/형 교사$/, '').replace(/ 교사$/, '') + ' 되기');
+      setGoal(`${res.type.title}로 한 걸음 나아가기`);
       const cat = AREA_CAT[res.low[0].key];
       setTasks([
         { t: `${TRAININGS.find((x) => x.cat === cat)?.title ?? '관련 연수'} 듣기`, kind: '배움', done: false },

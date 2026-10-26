@@ -366,8 +366,8 @@ i { display: inline-block; width: 1px; height: 0.8em; background: var(--line); m
 
 /* ── 지도 ── */
 .gmap { position: relative; background: #eef1e6; border-radius: 18px; border: 1px solid var(--line); overflow: hidden; }
-.gmap svg { display: block; width: 100%; height: auto; max-height: 72vh; }
-.gmap--compact svg { height: 340px; max-height: none; }
+.gmap > svg { display: block; width: 100%; height: auto; max-height: 72vh; }
+.gmap--compact > svg { height: 340px; max-height: none; }
 .gmap__city { fill: #fbf9f5; stroke: #b9b7a8; stroke-width: 1.2; transition: fill 0.15s; }
 .gmap__city:hover { fill: #fff; }
 .gmap__label { fill: #7c786d; text-anchor: middle; dominant-baseline: middle; font-family: var(--ui); font-weight: 600; pointer-events: none; }
@@ -763,7 +763,7 @@ i { display: inline-block; width: 1px; height: 0.8em; background: var(--line); m
   .select select { height: 40px; }
   .searchbox { height: 40px; }
   .goals, .studylist, .hgrid, .modgrid, .mtgrid, .cgrid, .ogrid { grid-template-columns: 1fr; }
-  .gmap--compact svg { height: 300px; }
+  .gmap--compact > svg { height: 300px; }
   .acc li > button { grid-template-columns: auto minmax(0, 1fr) auto; }
   .acc li > button .mono:not(:first-child) { display: none; }
 }

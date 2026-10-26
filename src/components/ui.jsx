@@ -85,15 +85,17 @@ export function Empty({ icon = 'leaf', text, children }) {
 
 export function Modal({ open, onClose, title, children, wide, footer }) {
   const box = useRef(null);
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => e.key === 'Escape' && onClose();
+    const onKey = (e) => e.key === 'Escape' && close.current();
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', onKey);
     box.current?.focus();
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [open, onClose]);
+  }, [open]);
   if (!open) return null;
   return createPortal(
     <div className="modal" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>

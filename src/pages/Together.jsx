@@ -118,7 +118,7 @@ export function Mentors() {
   const [q, setQ] = useState('');
   const [pick, setPick] = useState(null);
   const [f, setF] = useState({ topic: '', slot: '', msg: '' });
-  useEffect(() => { const m = MENTORS.find((x) => x.id === sp.get('m')); if (m) setPick(m); }, [sp]);
+  useEffect(() => { const m = MENTORS.find((x) => x.id === sp.get('m')); if (m) setPick(m); setField(sp.get('field') || '전체 분야'); }, [sp]);
   const list = MENTORS.filter((m) => (field === '전체 분야' || m.fields.includes(field)) && (region === '전체 권역' || m.region.includes(region)) && (level === '전체 학교급' || m.level === level) && (!onlyV || m.verified) && (!q || (m.name + m.intro + m.school).includes(q)))
     .sort((a, b) => (b.verified ? 1 : 0) - (a.verified ? 1 : 0) || b.rating - a.rating);
   const apply = () => {
