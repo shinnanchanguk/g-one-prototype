@@ -1,0 +1,6 @@
+node_modules/
+dist/
+_ref/
+_verify/
+.claude/
+.DS_Store
