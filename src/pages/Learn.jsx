@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { MaterialCard, TrainingModal, TrainingRow } from '../components/cards.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Empty, Field, Modal, PageHead, Panel, Progress, SearchBox, Select, Tabs, fmtDate, num } from '../components/ui.jsx';
-import { LEVELS, MATERIALS, ME, MODULES, ROOMS, TODAY, TRAININGS } from '../data/seed.js';
+import { LEVELS, MATERIALS, ME, MODULES, OUTCOMES, ROOMS, TODAY, TRAININGS } from '../data/seed.js';
 import { uid, useStore } from '../store.jsx';
 
 const CATS = ['전체', '수업·평가', '디지털·AI', '생활교육', '학급경영', '진로교육', '교육과정', '업무 역량', '정신건강·자기돌봄'];
@@ -77,6 +77,22 @@ export function Trainings() {
               {!list.length && <Empty text="조건에 맞는 연수가 없어요. 필터를 줄여 보세요." />}
             </div>
           </Panel>
+          {q.trim() && (() => {
+            const k = q.trim();
+            const mats = [...st.s.myMaterials, ...MATERIALS].filter((m) => (m.title + m.desc + m.subject).includes(k)).slice(0, 4);
+            const cases = OUTCOMES.filter((o) => (o.title + o.summary + o.tags.join(' ')).includes(k)).slice(0, 4);
+            const mods = [...st.s.myModules, ...MODULES].filter((m) => (m.title + m.items.join(' ')).includes(k)).slice(0, 4);
+            if (!mats.length && !cases.length && !mods.length) return null;
+            return (
+              <Panel title={`「${k}」 관련 실천 사례 · 교육자료 · 모듈`} code="주제/고민별 함께 찾기">
+                <div className="related">
+                  {mods.map((m) => <Link key={m.id} to="/learn/trainings?tab=module" className="related__item"><Chip tone="green">모듈</Chip><b>{m.title}</b><span className="mono">{m.author} · {m.weeks}주</span></Link>)}
+                  {cases.map((o) => <Link key={o.id} to="/share/outcomes" className="related__item"><Chip tone="purple">{o.kind} 사례</Chip><b>{o.title}</b><span className="mono">{o.school}</span></Link>)}
+                  {mats.map((m) => <Link key={m.id} to={`/learn/materials/${m.id}`} className="related__item"><Chip tone="blue">{m.type}</Chip><b>{m.title}</b><span className="mono">{m.author} 선생님</span></Link>)}
+                </div>
+              </Panel>
+            );
+          })()}
         </>
       )}
 

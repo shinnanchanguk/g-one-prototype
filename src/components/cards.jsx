@@ -220,7 +220,7 @@ export function MentorCard({ m, onApply }) {
       <p>{m.intro}</p>
       <div className="chips">{m.fields.map((f) => <Chip key={f} tone="purple">{f}</Chip>)}{m.region.map((r) => <Chip key={r}>{r}</Chip>)}</div>
       <div className="mtcard__foot">
-        <span className="mono"><Icon name="star" size={13} /> {m.rating} · 멘토링 {m.sessions}회</span>
+        <span className="mono"><Icon name="star" size={13} /> {m.rating} · 멘토링 {m.sessions}회{m.verified ? ' · 강사 인력풀' : ''}</span>
         <button className={`btn btn--sm ${m.verified ? 'btn--dark' : 'btn--line'}`} onClick={() => onApply(m)}>상세 · 신청</button>
       </div>
     </article>

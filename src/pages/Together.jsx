@@ -131,7 +131,7 @@ export function Mentors() {
   };
   return (
     <div className="container">
-      <PageHead crumbs={['동행', '멘토 찾기 및 신청']} code="4.1 · 멘토 찾기 및 신청" title="멘토 찾기" desc="누구나 멘토이자 멘티가 됩니다. 수석교사, 각종 지원단, 교권보호지원단처럼 검증된 전문가는 우수멘토로 표시돼요." />
+      <PageHead crumbs={['동행', '멘토 찾기 및 신청']} code="4.1 · 멘토 찾기 및 신청" title="멘토 찾기" desc="누구나 멘토이자 멘티가 됩니다. 수석교사, 각종 지원단, 교권보호지원단처럼 검증된 전문가는 우수멘토로 표시되고, 학교 단위 연수 강사 인력풀로도 연결됩니다." />
       <div className="filters">
         <SearchBox value={q} onChange={setQ} placeholder="이름, 학교, 소개로 찾기" />
         <Select label="분야" value={field} onChange={setField} options={['전체 분야', ...MENTOR_FIELDS]} />

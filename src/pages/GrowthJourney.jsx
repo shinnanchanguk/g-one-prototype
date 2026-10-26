@@ -44,10 +44,16 @@ function Roadmap() {
 }
 
 function Album() {
+  const st = useStore();
   const [year, setYear] = useState(2026);
   const list = BADGES.filter((b) => b.year === year);
   return (
     <div>
+      <div className="album-points">
+        <div><span className="mono">학습 포인트 · 활동형</span><b>{num(st.s.points.activity)}P</b><small>연수 이수 · 자료 업로드 · 공개수업 · 성장 기록</small></div>
+        <div><span className="mono">상호작용 포인트</span><b>{num(st.s.points.interaction)}P</b><small>동료의 좋아요 · 도움됨 · 자료 활용 평가</small></div>
+        <div><span className="mono">보유 뱃지</span><b>{BADGES.filter((b) => b.got).length}개</b><small>배움 {BADGES.filter((b) => b.got && b.stage === '배움').length} · 나눔 {BADGES.filter((b) => b.got && b.stage === '나눔').length} · 동행 {BADGES.filter((b) => b.got && b.stage === '동행').length}</small></div>
+      </div>
       <div className="row-between">
         <Tabs size="sm" value={year} onChange={setYear} items={[2026, 2025, 2024].map((y) => ({ value: y, label: `${y}년 (${BADGES.filter((b) => b.year === y && b.got).length})` }))} />
       </div>
