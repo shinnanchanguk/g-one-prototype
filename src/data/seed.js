@@ -134,21 +134,22 @@ export const ROOMS = [
 ];
 
 // ── 3.2 공동체 ─────────────────────────────────────────────
-export const COMM_TYPES = { 연구회: 'blue', 전문적학습공동체: 'green', 동호회: 'orange' };
+export const COMM_TYPES = { 연구회: 'blue', 전문적학습공동체: 'green', '동호회·소모임': 'orange' };
 
 export const COMMUNITIES = [
   { id: 'c1', type: '연구회', name: '경기 초등수학교육연구회', desc: '수학적 사고를 키우는 수업을 연구하고 해마다 공개수업을 엽니다.', members: 214, region: '도 단위', level: '초등학교', leader: '정우진', since: '2018', tags: ['수학', '탐구', '공개수업'], mine: true },
   { id: 'c2', type: '전문적학습공동체', name: '한빛초 질문수업 전학공', desc: '우리 학교 6학년 선생님들이 매주 수요일 질문 수업을 함께 설계합니다.', members: 8, region: '수원', level: '초등학교', leader: '이준영', since: '2026', tags: ['질문', '학년협의'], mine: true },
-  { id: 'c3', type: '동호회', name: '교사 그림책 읽는 밤', desc: '한 달에 한 번 그림책을 함께 읽고 수업 이야기를 나눕니다.', members: 46, region: '용인', level: '전체', leader: '서예린', since: '2023', tags: ['그림책', '독서'], mine: true },
+  { id: 'c3', type: '동호회·소모임', name: '교사 그림책 읽는 밤', desc: '한 달에 한 번 그림책을 함께 읽고 수업 이야기를 나눕니다.', members: 46, region: '용인', level: '전체', leader: '서예린', since: '2023', tags: ['그림책', '독서'], mine: true },
   { id: 'c4', type: '연구회', name: '경기 AI교육 실천연구회', desc: '현장에서 쓸 수 있는 AI 수업과 안전 수칙을 연구합니다.', members: 386, region: '도 단위', level: '전체', leader: '최민준', since: '2024', tags: ['AI', '디지털'], mine: false },
   { id: 'c5', type: '전문적학습공동체', name: '해오름중 과학 탐구 전학공', desc: '실험 중심 탐구 수업과 평가를 함께 고민합니다.', members: 6, region: '고양', level: '중학교', leader: '윤서준', since: '2025', tags: ['과학', '실험'], mine: false },
-  { id: 'c6', type: '동호회', name: '교사 러닝 크루 달리샘', desc: '주말 아침 함께 달리며 건강과 마음을 챙깁니다.', members: 73, region: '성남', level: '전체', leader: '권도윤', since: '2022', tags: ['운동', '자기돌봄'], mine: false },
+  { id: 'c6', type: '동호회·소모임', name: '교사 러닝 크루 달리샘', desc: '주말 아침 함께 달리며 건강과 마음을 챙깁니다.', members: 73, region: '성남', level: '전체', leader: '권도윤', since: '2022', tags: ['운동', '자기돌봄'], mine: false },
   { id: 'c7', type: '연구회', name: '경기 진로교육연구회', desc: '교과와 진로를 잇는 수업 모델을 개발합니다.', members: 158, region: '도 단위', level: '중학교', leader: '오세진', since: '2016', tags: ['진로', '교과연계'], mine: false },
   { id: 'c8', type: '전문적학습공동체', name: '별빛중 평가 혁신 전학공', desc: '루브릭과 피드백으로 학생 성장을 기록합니다.', members: 11, region: '안양과천', level: '중학교', leader: '정다은', since: '2024', tags: ['평가', '루브릭'], mine: false },
-  { id: 'c9', type: '동호회', name: '보드게임 수업 연구모임', desc: '수업에 쓰는 보드게임을 직접 만들고 시험해 봅니다.', members: 52, region: '의정부', level: '초등학교', leader: '김현수', since: '2021', tags: ['놀이', '보드게임'], mine: false },
+  { id: 'c9', type: '동호회·소모임', name: '보드게임 수업 연구모임', desc: '수업에 쓰는 보드게임을 직접 만들고 시험해 봅니다.', members: 52, region: '의정부', level: '초등학교', leader: '김현수', since: '2021', tags: ['놀이', '보드게임'], mine: false },
   { id: 'c10', type: '연구회', name: '경기 회복적생활교육연구회', desc: '회복적 대화와 서클로 학교 문화를 바꿔 갑니다.', members: 241, region: '도 단위', level: '전체', leader: '장하린', since: '2019', tags: ['생활교육', '서클'], mine: false },
   { id: 'c11', type: '전문적학습공동체', name: '나래학교 통합교육 전학공', desc: '특수교사와 통합학급 교사가 함께 수업을 설계합니다.', members: 9, region: '부천', level: '특수학교', leader: '배수아', since: '2025', tags: ['특수', '통합교육'], mine: false },
-  { id: 'c12', type: '동호회', name: '교사 사진 산책', desc: '학교 풍경을 사진으로 기록하고 전시도 엽니다.', members: 38, region: '파주', level: '전체', leader: '문지호', since: '2024', tags: ['사진', '취미'], mine: false },
+  { id: 'c12', type: '동호회·소모임', name: '교사 사진 산책', desc: '학교 풍경을 사진으로 기록하고 전시도 엽니다.', members: 38, region: '파주', level: '전체', leader: '문지호', since: '2024', tags: ['사진', '취미'], mine: false },
+  { id: 'c13', type: '동호회·소모임', name: '신규 선생님 수요일 밤 수다', desc: '첫 해의 고민을 편하게 나누는 온라인 소모임입니다. 한 번만 와도 괜찮아요.', members: 24, region: '도 단위', level: '전체', leader: '임서현', since: '2026', tags: ['신규', '수다'], mine: false },
 ];
 
 export const BOARD_TABS = ['전체 활동', '일정', '공지사항', '자료나눔', '실천 성찰', '함께 연구', '사진·영상'];
