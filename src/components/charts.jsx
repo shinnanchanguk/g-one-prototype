@@ -43,30 +43,31 @@ export const radarColor = (i, total) => SERIES_COLORS[(SERIES_COLORS.length - to
 
 // ── 경기도 지도 + 공개수업 표시 ─────────────────────────────────
 const cityByName = Object.fromEntries(CITIES.map((c) => [c.name, c]));
-function spread(items) {
+function spread(items, gap) {
   const byCity = {};
   return items.map((it) => {
     const c = cityByName[it.city];
     const k = (byCity[it.city] = (byCity[it.city] ?? -1) + 1);
-    const ang = k * 2.4, r = k ? 14 + k * 4 : 0;
+    const ang = k * 2.4, r = k ? gap * (1 + k * 0.45) : 0;
     return { ...it, x: c.cx + Math.cos(ang) * r, y: c.cy + Math.sin(ang) * r };
   });
 }
 
 export function GyeonggiMap({ items, onOpen, compact, selected, onSelect }) {
   const [zoom, setZoom] = useState(1);
-  const pts = useMemo(() => spread(items), [items]);
-  const sel = pts.find((p) => p.id === selected);
   const vw = MAP_W / zoom, vh = MAP_H / zoom;
+  const ms = 15 / Math.sqrt(zoom) * (compact ? 1.5 : 1);
+  const pts = useMemo(() => spread(items, ms * 1.3), [items, ms]);
+  const sel = pts.find((p) => p.id === selected);
+  const ordered = sel ? [...pts.filter((p) => p !== sel), sel] : pts;
   const fx = sel ? Math.min(Math.max(sel.x - vw / 2, 0), MAP_W - vw) : (MAP_W - vw) / 2;
   const fy = sel ? Math.min(Math.max(sel.y - vh / 2, 0), MAP_H - vh) : (MAP_H - vh) / 2;
-  const ms = 15 / Math.sqrt(zoom) * (compact ? 1.5 : 1);
   return (
     <div className={`gmap ${compact ? 'gmap--compact' : ''}`}>
       <svg viewBox={`${fx} ${fy} ${vw} ${vh}`} role="img" aria-label="경기도 공개수업 지도" onClick={() => onSelect?.(null)}>
         {CITIES.map((c) => <path key={c.name} d={c.d} className="gmap__city" />)}
         {CITIES.map((c) => <text key={c.name} x={c.cx} y={c.cy} className="gmap__label" style={{ fontSize: (compact ? 22 : 15) / Math.sqrt(zoom) }}>{c.name.replace(/(시|군)$/, '')}</text>)}
-        {pts.map((p) => (
+        {ordered.map((p) => (
           <g key={p.id} transform={`translate(${p.x},${p.y})`} className={`gmap__pin pin--${LEVEL_COLOR[p.level]} ${p.id === selected ? 'is-sel' : ''}`}
             onClick={(e) => { e.stopPropagation(); onSelect?.(p.id); }} role="button" tabIndex={0} aria-label={`${p.school} ${p.subject} 공개수업`}
             onKeyDown={(e) => e.key === 'Enter' && onSelect?.(p.id)}>

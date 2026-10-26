@@ -14,7 +14,7 @@ export function Worries() {
   const [f, setF] = useState({ title: '', body: '', tag: '수업 고민', anon: true });
   const all = [...st.s.myWorries, ...WORRIES];
   const list = all.filter((w) => (tag === '전체' || (tag === '내 고민' ? w.mine : w.tag === tag)) && (!q || (w.title + w.body).includes(q)))
-    .sort((a, b) => (sort === '최신순' ? b.date.localeCompare(a.date) : sort === '공감순' ? b.likes - a.likes : (a.comments.length - b.comments.length)));
+    .sort((a, b) => (sort === '최신순' ? b.date.localeCompare(a.date) : sort === '공감순' ? b.likes - a.likes : ((a.comments.length + (st.s.worryComments[a.id]?.length ?? 0)) - (b.comments.length + (st.s.worryComments[b.id]?.length ?? 0)))));
   const post = (e) => {
     e.preventDefault();
     if (!f.title.trim() || !f.body.trim()) { st.toast('제목과 내용을 적어 주세요', 'warn'); return; }
