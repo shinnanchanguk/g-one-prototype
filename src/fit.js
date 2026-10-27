@@ -1,25 +1,45 @@
-// 내 정보(학교급 묶음·교과·지원청)에 맞춰 목록을 거르고 정렬한다. 화면 공용.
+// 내 정보(학교급·담당·지원청)에 맞춰 목록을 거르고 정렬한다. 화면 공용.
+// 학교급·담당 분류는 도름스 가입 때 받는 체계(유치원·초등학교·중학교·고등학교 + 교과·담당 목록)를 그대로 쓴다.
 import { CITIES } from './data/gyeonggiMap.js';
-import { BANDS, ME, OFFICES, SUBJECTS, bandOf } from './data/seed.js';
+import { DUTY_SUBJECTS, ME, OFFICES, SCHOOL_LEVELS, SUBJECT_ALIAS, bandOf } from './data/seed.js';
 
+// 목록을 맞출 때 쓰는 학교급 묶음: 중·고는 서로 오가며 보니 '중등'으로, 특수교육 선생님은 '특수'로 본다
+export const bandFor = (level, subject) => (subject === '특수교육' ? '특수' : { 유치원: '유치원', 초등학교: '초등', 중학교: '중등', 고등학교: '중등' }[level] ?? '초등');
 // 프로토타입 샘플: 학교급을 바꾸면 '우리 학교'도 그 학교급의 샘플 학교로 바뀐다
-export const SCHOOL_BY_BAND = { 유치원: '햇살유치원', 초등: ME.school, 중등: '팔달샘중학교', 특수: '나래학교' };
-export const DEFAULT_PROFILE = { band: '초등', subject: '', office: ME.office, school: ME.school, city: '수원시', sortBy: '학교급', set: false };
+export const SCHOOL_BY_LEVEL = { 유치원: '햇살유치원', 초등학교: ME.school, 중학교: '팔달샘중학교', 고등학교: '매여울고등학교' };
+export const schoolFor = (level, subject) => (subject === '특수교육' ? '나래학교' : SCHOOL_BY_LEVEL[level] ?? ME.school);
+export const DEFAULT_PROFILE = { level: '초등학교', subject: '', band: '초등', office: ME.office, school: ME.school, city: '수원시', set: false };
+export const SUBJECT_MAX = 20;
+// 목록에 없는 담당은 직접 적을 수 있다(줄바꿈·제어 문자 없이 짧게)
+export const cleanSubject = (v) => {
+  if (typeof v !== 'string') return '';
+  const t = v.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, SUBJECT_MAX);
+  return SUBJECT_ALIAS[t] ?? t;
+};
+// 담당이 특수교육·상담·보건·사서·영양이면 같은 담당 자료를, 아니면 같은 학교급 자료를 먼저 보여 준다
+export const sortModeFor = (p) => (DUTY_SUBJECTS.includes(p.subject) ? '교과' : '학교급');
 
+const OLD_BAND_LEVEL = { 유치원: '유치원', 초등: '초등학교', 중등: '중학교', 특수: '초등학교' };
 export function cleanProfile(p) {
   const d = DEFAULT_PROFILE;
   if (!p || typeof p !== 'object') return { ...d };
+  // 예전 체험판은 학교급 묶음(band)만 저장했다. 특수였으면 담당을 특수교육으로 옮긴다
+  const level = SCHOOL_LEVELS.includes(p.level) ? p.level : OLD_BAND_LEVEL[p.band] ?? d.level;
+  const subject = cleanSubject(p.subject) || (!p.level && p.band === '특수' ? '특수교육' : '');
   const office = OFFICES.some((o) => o.name === p.office) ? p.office : d.office;
+  const cities = OFFICES.find((o) => o.name === office).cities;
   return {
-    band: BANDS.includes(p.band) ? p.band : d.band,
-    subject: SUBJECTS.includes(p.subject) ? p.subject : '',
+    level,
+    subject,
+    band: bandFor(level, subject),
     office,
-    school: SCHOOL_BY_BAND[BANDS.includes(p.band) ? p.band : d.band],
-    city: OFFICES.find((o) => o.name === office).cities.includes(p.city) ? p.city : OFFICES.find((o) => o.name === office).cities[0],
-    sortBy: p.sortBy === '교과' ? '교과' : '학교급',
+    school: schoolFor(level, subject),
+    city: cities.includes(p.city) ? p.city : cities[0],
     set: p.set === true,
   };
 }
+// 머리말·안내에 쓰는 한 줄 표기: "초등학교 · 보건 · 수원"
+export const profileLabel = (p, office) => [p.level, p.subject, office].filter(Boolean).join(' · ');
 
 const bandMatch = (item, band) => {
   if (item.audience && Array.isArray(item.audience)) return item.audience.includes(band);
@@ -28,7 +48,7 @@ const bandMatch = (item, band) => {
 const subjectMatch = (item, subject) => !!subject && (item.subject === subject || (typeof item.audience === 'string' && item.audience.includes(subject)));
 
 // 학교급이 맞는 것, 교과가 맞는 것을 앞으로. 같은 점수면 원래 순서(날짜 등)를 지킨다.
-export function sortByProfile(list, p, mode = p.sortBy) {
+export function sortByProfile(list, p, mode = sortModeFor(p)) {
   const score = (it) => {
     const b = bandMatch(it, p.band) ? 1 : 0;
     const s = subjectMatch(it, p.subject) ? 1 : 0;

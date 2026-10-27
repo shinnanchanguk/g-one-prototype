@@ -180,7 +180,7 @@ export default function GrowthDesign() {
               </div>
             ))}
           </div>
-          <Link to="/learn/trainings" className="btn btn--blue"><Icon name="book" size={16} />배움 메뉴로 가서 더 찾아보기</Link>
+          <Link to="/learn/trainings" className="btn btn--dark"><Icon name="book" size={16} />배움 메뉴로 가서 더 찾아보기</Link>
         </Panel>
       )}
 

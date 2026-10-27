@@ -10,10 +10,9 @@ import { uid, useStore } from '../store.jsx';
 
 const VIEWS = [
   { v: 'feed', n: 1, label: '맞춤 피드', icon: 'list', solves: '정보가 너무 많고 범위가 헷갈리는 문제', note: '우리 학교 동료장학, 우리 지원청, 같은 교과, 도 단위 순으로 묶어 내게 맞는 것부터 보여 줘요.' },
-  { v: 'subject', n: 2, label: '교과별 찾기', icon: 'book', solves: '드문 교과를 찾아다녀야 하는 문제', note: '교과를 먼저 고르면 경기도 전체에서 그 교과 수업이 모여요. 관심 교과 알림도 받을 수 있어요.' },
-  { v: 'week', n: 3, label: '주간 일정표', icon: 'clock', solves: '달력 칸에 정보가 다 안 들어가는 문제', note: '이번 주와 다음 주를 요일과 오전·오후로 나눠 보여 줘요. 내 수업·신청과 겹치는지 바로 보여요.' },
-  { v: 'map', n: 4, label: '지도·가까운 순', icon: 'map', solves: '내 지역과 이웃 지역을 골라 보기 어려운 문제', note: '지도에서 시·군을 눌러 지역을 넣고 빼요. 목록은 우리 학교에서 가까운 순이에요.' },
-  { v: 'cal', n: 5, label: '한 달 달력', icon: 'calendar', solves: '기존 달력이 복잡한 문제', note: '기존 달력을 고친 안이에요. 날짜를 누르면 그날 수업이 옆에 펼쳐져요.' },
+  { v: 'week', n: 2, label: '주간 일정표', icon: 'clock', solves: '달력 칸에 정보가 다 안 들어가는 문제', note: '이번 주와 다음 주를 요일과 오전·오후로 나눠 보여 줘요. 내 수업·신청과 겹치는지 바로 보여요.' },
+  { v: 'map', n: 3, label: '지도·가까운 순', icon: 'map', solves: '내 지역과 이웃 지역을 골라 보기 어려운 문제', note: '지도에서 시·군을 눌러 지역을 넣고 빼요. 목록은 우리 학교에서 가까운 순이에요.' },
+  { v: 'cal', n: 4, label: '한 달 달력', icon: 'calendar', solves: '기존 달력이 복잡한 문제', note: '기존 달력을 고친 안이에요. 날짜를 누르면 그날 수업이 옆에 펼쳐져요.' },
 ];
 const BAND_OPTS = ['전체 학교급', ...BANDS];
 const WEEK0 = '2026-10-26';
@@ -31,7 +30,7 @@ function Group({ title, sub, items, onOpen, max = 4, dist }) {
   );
 }
 
-function FeedView({ list, nearExtra, p, band, onOpen }) {
+function FeedView({ list, nearExtra, p, band, wide, onOpen }) {
   const b = band === '전체 학교급' ? p.band : band;
   const near = neighborOffices(p.office);
   const used = new Set();
@@ -41,6 +40,7 @@ function FeedView({ list, nearExtra, p, band, onOpen }) {
   const subj = p.subject ? take((o) => o.subject === p.subject && o.scope === '도') : [];
   const doBand = take((o) => o.scope === '도' && o.audience.includes(b));
   const nearby = [...take((o) => near.includes(o.office)), ...nearExtra.filter((o) => !used.has(o.id))];
+  const otherOffice = wide ? take((o) => o.locked) : [];
   const rest = take(() => true);
   return (
     <div>
@@ -49,41 +49,9 @@ function FeedView({ list, nearExtra, p, band, onOpen }) {
       <Group title={`같은 교과 · ${p.subject}`} sub="도 단위 공개" items={subj} onOpen={onOpen} />
       <Group title={`도 단위 · ${b} 대상`} items={doBand} onOpen={onOpen} />
       <Group title="이웃 지원청" sub={`${near.map(shortOffice).join(' · ')} · 지원청 단위는 그 지원청 선생님 대상이라 지도안만 볼 수 있어요`} items={nearby} onOpen={onOpen} />
-      <Group title="그 밖의 공개수업" items={rest} onOpen={onOpen} max={2} />
+      <Group title="다른 지원청 공개" sub="그 지원청 선생님 대상이라 신청은 안 되고 지도안을 미리 볼 수 있어요" items={otherOffice} onOpen={onOpen} />
+      <Group title={wide ? '다른 학교급·교과·지역' : '그 밖의 공개수업'} items={rest} onOpen={onOpen} max={wide ? 6 : 2} />
       {!list.length && <Empty text="조건에 맞는 공개수업이 없어요. 범위나 지역을 넓혀 보세요." />}
-    </div>
-  );
-}
-
-// 드문 교과: 경기도 전체에서 중·고등학교 공개가 한 건뿐인 교과(고교 선택 과목 등)
-function SubjectView({ list, all, p, onOpen }) {
-  const st = useStore();
-  const subjects = [...new Set(all.map((o) => o.subject))];
-  const count = (x) => list.filter((o) => o.subject === x).length;
-  const rare = (x) => { const xs = all.filter((o) => o.subject === x); return xs.length === 1 && ['중학교', '고등학교'].includes(xs[0].level); };
-  const ordered = subjects.sort((a, b) => (b === p.subject) - (a === p.subject) || count(b) - count(a));
-  const [sub, setSub] = useState(p.subject && subjects.includes(p.subject) ? p.subject : ordered[0]);
-  const items = list.filter((o) => o.subject === sub);
-  const alert = !!st.s.subjectAlerts[sub];
-  return (
-    <div className="sview">
-      <ul className="sview__list" role="tablist" aria-label="교과">
-        {ordered.map((x) => (
-          <li key={x}><button role="tab" aria-selected={sub === x} className={`${sub === x ? 'is-on' : ''} ${count(x) ? '' : 'is-zero'}`} onClick={() => setSub(x)}>
-            <b>{x}</b>{rare(x) && <span className="sview__rare">드문 교과</span>}{st.s.subjectAlerts[x] && <Icon name="bell" size={13} />}<span className="mono">{count(x)}</span>
-          </button></li>
-        ))}
-      </ul>
-      <div className="sview__main">
-        <div className="row-between">
-          <h3 className="h4">{sub} 공개수업 <span className="mono">{items.length}건 · 경기도 전체</span></h3>
-          <button className={`btn btn--sm ${alert ? 'btn--dark' : 'btn--line'}`} onClick={() => { st.toggle('subjectAlerts', sub); st.toast(alert ? `「${sub}」 알림을 껐어요` : `「${sub}」 공개수업이 새로 올라오면 알려 드릴게요`); }} aria-pressed={alert}>
-            <Icon name="bell" size={14} />{alert ? '알림 받는 중' : '이 교과 새 공개수업 알림 받기'}
-          </button>
-        </div>
-        <div className="oclist">{items.map((o) => <OpenClassCard key={o.id} o={o} onOpen={onOpen} />)}</div>
-        {!items.length && <Empty text="지금 조건에서는 이 교과 공개수업이 없어요. 학교급이나 지역 조건을 넓혀 보세요." />}
-      </div>
     </div>
   );
 }
@@ -192,6 +160,16 @@ export function OpenClasses() {
   const [pickRegion, setPickRegion] = useState(false);
   const [band, setBand] = useState(p.band);
   const [subject, setSubject] = useState('전체 교과');
+  // 처음에는 내 학교급·지역에 맞춘 것부터, 넓게 찾기를 켜면 다른 학교급·교과·지역까지 모두 보인다
+  const [wide, setWide] = useState(false);
+  const toggleWide = () => {
+    const next = !wide;
+    setWide(next);
+    setBand(next ? '전체 학교급' : p.band);
+    setSubject('전체 교과');
+    setRegions('all');
+    st.toast(next ? '다른 학교급·교과·지역 공개수업까지 모두 보여 드려요' : '선생님께 맞는 공개수업부터 보여 드려요');
+  };
   const [open, setOpen] = useState(null);
   const [f, setF] = useState({ date: '2026-12-02', time: '10:40~11:20', subject: p.subject || '수학', topic: '', grade: '', scope: '학교', cap: 10, audience: [p.band], file: '', goal: '', flow: '' });
 
@@ -200,7 +178,7 @@ export function OpenClasses() {
   const visible = all.filter((o) => {
     const a = classAccess(o, p);
     if (a === 'hidden') return false;
-    if (a === 'other') return regions !== 'all' && regions.includes(o.office);
+    if (a === 'other') return wide || (regions !== 'all' && regions.includes(o.office));
     return true;
   }).map((o) => ({ ...o, locked: classAccess(o, p) === 'other' }));
   const filtered = visible.filter((o) =>
@@ -213,10 +191,6 @@ export function OpenClasses() {
   // 피드의 '이웃 지원청' 묶음에는 이웃 지원청의 지원청 단위 공개도 잠금 표시로 함께 보여 준다
   const nearExtra = all.filter((o) => classAccess(o, p) === 'other' && near.includes(o.office) && o.date >= TODAY
     && (band === '전체 학교급' || o.audience.includes(band)) && (subject === '전체 교과' || o.subject === subject) && (scope === '전체' || scope === '지원청'))
-    .map((o) => ({ ...o, locked: true }));
-  // 교과별 찾기는 경기도 전체에서 모으므로 다른 지원청의 지원청 단위 공개도 잠금 표시로 넣는다
-  const lockedAll = all.filter((o) => classAccess(o, p) === 'other' && o.date >= TODAY
-    && (band === '전체 학교급' || o.audience.includes(band)) && (scope === '전체' || scope === '지원청'))
     .map((o) => ({ ...o, locked: true }));
   const mine = all.filter((o) => st.s.classApps[o.id]);
   const cur = VIEWS.find((x) => x.v === view);
@@ -231,7 +205,7 @@ export function OpenClasses() {
     if (!f.audience.length) { st.toast('참관 대상 학교급을 하나 이상 골라 주세요', 'warn'); return; }
     const flow = f.flow.split('\n').map((x) => x.trim().slice(0, 120)).filter(Boolean).slice(0, 6);
     const o = {
-      id: uid('o'), date: f.date, time: f.time, city: p.city, school: p.school, level: { 유치원: '유치원', 초등: '초등학교', 중등: '중학교', 특수: '특수학교' }[p.band], grade: f.grade || '학급 미정', subject: f.subject, topic: f.topic.trim(), teacher: ME.name,
+      id: uid('o'), date: f.date, time: f.time, city: p.city, school: p.school, level: p.subject === '특수교육' ? '특수학교' : p.level, grade: f.grade || '학급 미정', subject: f.subject, topic: f.topic.trim(), teacher: ME.name,
       scope: f.scope, cap: Math.max(1, Math.min(60, Number(f.cap) || 1)), applied: 0, mode: '대면', office: p.office, audience: f.audience, mine: true,
       plan: { file: f.file || `지도안_${f.subject}.hwpx`, goal: f.goal.trim() || f.topic.trim(), flow: flow.length ? flow : ['도입 · 생각을 여는 질문', `전개 · ${f.topic.trim()}`, '정리 · 배운 점 나누기'] },
     };
@@ -261,6 +235,9 @@ export function OpenClasses() {
           </div>
 
           <div className="ofilter">
+            <button className={`btn btn--sm ${wide ? 'btn--dark' : 'btn--line'}`} onClick={toggleWide} aria-pressed={wide} title="다른 학교급·교과·지역 공개수업도 함께 봅니다">
+              <Icon name={wide ? 'check' : 'search'} size={14} />{wide ? '넓게 찾는 중' : '넓게 찾기'}
+            </button>
             <Tabs size="sm" value={scope} onChange={setScope} items={[{ value: '전체', label: `전체 ${scopeCount('전체')}` }, ...SCOPES.map((sc) => ({ value: sc, label: `${SCOPE_LABEL[sc]} ${scopeCount(sc)}` }))]} />
             <Select label="참관 대상 학교급" size="sm" value={band} onChange={setBand} options={BAND_OPTS} />
             <Select label="교과" size="sm" value={subject} onChange={setSubject} options={['전체 교과', ...new Set(visible.map((o) => o.subject))]} />
@@ -287,8 +264,7 @@ export function OpenClasses() {
             </div>
           )}
 
-          {view === 'feed' && <FeedView list={upcoming} nearExtra={regions === 'all' ? nearExtra : []} p={p} band={band} onOpen={setOpen} />}
-          {view === 'subject' && <SubjectView list={[...upcoming, ...lockedAll.filter((o) => !upcoming.some((u) => u.id === o.id))]} all={all.filter((o) => o.date >= TODAY && classAccess(o, p) !== 'hidden')} p={p} onOpen={setOpen} />}
+          {view === 'feed' && <FeedView list={upcoming} nearExtra={regions === 'all' && !wide ? nearExtra : []} p={p} band={band} wide={wide} onOpen={setOpen} />}
           {view === 'week' && <WeekView list={filtered} onOpen={setOpen} />}
           {view === 'map' && <MapView list={upcoming} p={p} regions={regions} setRegions={setRegions} onOpen={setOpen} />}
           {view === 'cal' && <CalView list={filtered} onOpen={setOpen} />}

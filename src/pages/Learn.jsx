@@ -4,7 +4,7 @@ import { DELIVERY_LABEL, MaterialCard, ModuleCard, TrainingCard, trainingState }
 import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Empty, Field, Modal, PageHead, Panel, Progress, SearchBox, Select, Tabs, fmtDate, num } from '../components/ui.jsx';
 import { LEVELS, MATERIALS, ME, MODULES, OUTCOMES, ROOMS, TODAY, TRAININGS } from '../data/seed.js';
-import { fitsBand, sortByProfile } from '../fit.js';
+import { fitsBand, sortByProfile, sortModeFor } from '../fit.js';
 import { matCat, thumbsFor } from '../thumbs.js';
 import { uid, useStore } from '../store.jsx';
 
@@ -33,7 +33,7 @@ export function Trainings() {
   const [mode, setMode] = useState('전체 운영방식');
   const [target, setTarget] = useState('신규·경력 모두');
   const [cat, setCat] = useState('전체');
-  const [sort, setSort] = useState(p.sortBy === '교과' ? '교과 먼저' : '학교급 먼저');
+  const [sort, setSort] = useState(sortModeFor(p) === '교과' ? '교과 먼저' : '학교급 먼저');
 
   const list = useMemo(() => {
     const base = TRAININGS.filter((t) =>
@@ -71,7 +71,7 @@ export function Trainings() {
         <div className="row-between">
           <Tabs size="sm" value={org} onChange={setOrg} items={['전체', ...ORGS].map((o) => ({ value: o, label: `${o === '전체' ? '전체 주관' : o} ${TRAININGS.filter((t) => o === '전체' || t.org === o).length}` }))} />
           <div className="row-end">
-            <span className="mono">{list.length}건 · {p.band}{p.subject ? ` · ${p.subject}` : ''} 기준</span>
+            <span className="mono">{list.length}건 · {p.level}{p.subject ? ` · ${p.subject}` : ''} 기준</span>
             <Select label="정렬" size="sm" value={sort} onChange={setSort} options={T_SORTS} />
           </div>
         </div>
@@ -91,7 +91,7 @@ export function Trainings() {
             <div className="related">
               {mods.map((m) => <Link key={m.id} to="/learn/modules" className="related__item"><Chip tone="green">배움 모듈</Chip><b>{m.title}</b><span className="mono">{m.author} · {m.weeks}주</span></Link>)}
               {cases.map((o) => <Link key={o.id} to="/share/outcomes" className="related__item"><Chip tone="purple">{o.kind} 사례</Chip><b>{o.title}</b><span className="mono">{o.school}</span></Link>)}
-              {mats.map((m) => <Link key={m.id} to={`/learn/materials/${m.id}`} className="related__item"><Chip tone="blue">{m.type}</Chip><b>{m.title}</b><span className="mono">{m.author} 선생님</span></Link>)}
+              {mats.map((m) => <Link key={m.id} to={`/learn/materials/${m.id}`} className="related__item"><Chip tone="purple">{m.type}</Chip><b>{m.title}</b><span className="mono">{m.author} 선생님</span></Link>)}
             </div>
           </Panel>
         );
@@ -140,7 +140,7 @@ export function Modules() {
         <>
           <div className="row-between">
             <div className="chips chips--scroll">{CATS.map((c) => <button key={c} className={`chip chip--btn ${cat === c ? 'is-on' : ''}`} onClick={() => setCat(c)}>{c}</button>)}</div>
-            <span className="mono">{p.band} 선생님께 맞는 순</span>
+            <span className="mono">{p.subject || p.level} 선생님께 맞는 순</span>
           </div>
           <div className="modgrid mt">{rec.map((m) => <ModuleCard key={m.id} m={m} onOpen={setMod} />)}</div>
           {!rec.length && <Empty text="이 분야의 모듈이 아직 없어요. 직접 만들어 보세요."><button className="btn btn--dark" onClick={() => setSp({ tab: 'mine', make: '1' })}>모듈 만들기</button></Empty>}
@@ -331,7 +331,7 @@ export function Rooms() {
           ); })}
           {trainings.map((t) => (
             <article key={t.id} className="study">
-              <div className="study__head"><Chip tone={t.type === '직무' ? 'blue' : 'ink'}>{t.type === '직무' ? '직무연수(NEIS)' : '자율연수'}</Chip><h3>{t.title}</h3></div>
+              <div className="study__head"><Chip tone="ink" solid={t.type === '직무'}>{t.type === '직무' ? '직무연수(NEIS)' : '자율연수'}</Chip><h3>{t.title}</h3></div>
               <p>{DELIVERY_LABEL[t.delivery]} · {t.host} · {t.sessions}차시 · 인정 {t.hours}시간</p>
               <div className="row-end"><span className="mono">{t.eduFrom > TODAY ? `시작까지 ${Math.round((new Date(t.eduFrom) - new Date(TODAY)) / 864e5)}일` : '진행 중'}</span></div>
             </article>
@@ -344,7 +344,7 @@ export function Rooms() {
               <div className="row-end">{p >= 100 ? <button className="btn btn--sm btn--line" onClick={() => setFb(m)}><Icon name="message" size={14} />피드백 남기기</button> : <button className="btn btn--sm btn--green" onClick={() => step(m.id, p)}>이어서 학습하기</button>}</div>
             </article>
           ); })}
-          {!rooms.length && !trainings.length && !modules.length && <Empty text="학습 중인 과정이 없어요"><Link to="/learn/trainings" className="btn btn--blue">연수 찾기</Link><Link to="/learn/modules" className="btn btn--line">배움 모듈 찾기</Link></Empty>}
+          {!rooms.length && !trainings.length && !modules.length && <Empty text="학습 중인 과정이 없어요"><Link to="/learn/trainings" className="btn btn--dark">연수 찾기</Link><Link to="/learn/modules" className="btn btn--line">배움 모듈 찾기</Link></Empty>}
         </div>
       )}
       {tab === 'done' && (

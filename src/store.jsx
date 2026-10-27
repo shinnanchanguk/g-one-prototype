@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { CITIES } from './data/gyeonggiMap.js';
-import { AREAS, BANDS, DIAG_HISTORY, DIARY, GOALS, LEVELS, ME, MENTORINGS, POINT_LOG, SCALE, SUBJECTS, TODAY, bandOf } from './data/seed.js';
+import { AREAS, BANDS, DIAG_HISTORY, DIARY, GOALS, LEVELS, ME, MENTORINGS, POINT_LOG, SCALE, SUBJECT_ALIAS, TODAY, bandOf } from './data/seed.js';
 import { DEFAULT_PROFILE, cleanProfile } from './fit.js';
 
 // 화면에서 한 모든 일은 이 브라우저(localStorage)에만 남는다.
@@ -35,16 +35,17 @@ const initial = () => ({
   profile: { ...DEFAULT_PROFILE },
   classView: 'feed',
   quickDiag: {},
-  subjectAlerts: {},
 });
 
 // 단계는 배움·나눔·동행 세 가지로 통일했다. 예전 기록의 실천·성찰은 가까운 단계로 옮긴다.
 const STAGE_FIX = { 실천: '배움', 성찰: '나눔' };
 const fixKind = (k) => STAGE_FIX[k] ?? (['배움', '나눔', '동행'].includes(k) ? k : '배움');
-export const CLASS_VIEWS = ['feed', 'subject', 'week', 'map', 'cal'];
+export const CLASS_VIEWS = ['feed', 'week', 'map', 'cal'];
 const SCOPES = ['학교', '지원청', '도'];
 const CITY_OK = new Set(CITIES.map((c) => c.name));
 const str = (v, n) => String(v ?? '').slice(0, n);
+// 예전 체험판의 교과 이름(도덕·정보·진로 등)을 도름스 분류 이름으로 옮긴다
+const subj = (v) => SUBJECT_ALIAS[v] ?? v;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const isDate = (v) => { try { return typeof v === 'string' && DATE.test(v) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v; } catch { return false; } };
 const obj = (x) => x && typeof x === 'object' && !Array.isArray(x);
@@ -64,7 +65,7 @@ function fixClass(o) {
     : { file: '', goal: str(o.topic, 200), flow: [`전개 · ${str(o.topic, 120)}`] };
   return {
     ...o, audience, plan, level,
-    topic: str(o.topic, 80), subject: str(o.subject, 20), grade: str(o.grade, 20), time: str(o.time, 20), mode: str(o.mode ?? '대면', 10),
+    topic: str(o.topic, 80), subject: subj(str(o.subject, 20)), grade: str(o.grade, 20), time: str(o.time, 20), mode: str(o.mode ?? '대면', 10),
     office: typeof o.office === 'string' ? str(o.office, 40) : ME.office,
     teacher: typeof o.teacher === 'string' ? str(o.teacher, 20) : ME.name,
     school: typeof o.school === 'string' ? str(o.school, 40) : ME.school,
@@ -84,7 +85,7 @@ function load() {
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return base;
     // 모양이 다른 값(옛 버전·손상)은 버리고 기본값을 쓴다
     for (const [k, v] of Object.entries(parsed)) {
-      if (k === '__proto__' || k === 'constructor' || k === 'prototype' || k === 'homeVersion') continue;
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype' || k === 'homeVersion' || k === 'subjectAlerts') continue;
       const d = base[k];
       if (d === undefined) { if (v && typeof v === 'object' && !Array.isArray(v)) base[k] = v; else if (typeof v === 'string') base[k] = v; continue; }
       if (Array.isArray(d) ? Array.isArray(v) : (typeof v === typeof d && v !== null && !Array.isArray(v))) base[k] = v;
@@ -99,7 +100,7 @@ function load() {
     base.myClasses = base.myClasses.filter((o) => o && typeof o === 'object' && typeof o.id === 'string' && isDate(o.date) && typeof o.time === 'string').map(fixClass);
     // 첫 화면이 읽는 내 자료·모듈·고민도 모양을 맞춘다(손상된 저장값이 첫 화면을 멈추지 않게)
     base.myMaterials = base.myMaterials.filter((m) => obj(m) && typeof m.id === 'string')
-      .map((m) => ({ ...m, title: str(m.title, 120), author: str(m.author || ME.name, 30), school: str(m.school, 40), type: str(m.type || '수업자료', 20), level: str(m.level || '전체', 10), subject: str(m.subject, 20), desc: str(m.desc, 500), date: isDate(m.date) ? m.date : TODAY, likes: nonneg(m.likes), downloads: nonneg(m.downloads), views: nonneg(m.views), rating: Number.isFinite(m.rating) ? m.rating : 0, files: Array.isArray(m.files) ? m.files.map((f) => str(f, 80)) : [] }));
+      .map((m) => ({ ...m, title: str(m.title, 120), author: str(m.author || ME.name, 30), school: str(m.school, 40), type: str(m.type || '수업자료', 20), level: str(m.level || '전체', 10), subject: subj(str(m.subject, 20)), desc: str(m.desc, 500), date: isDate(m.date) ? m.date : TODAY, likes: nonneg(m.likes), downloads: nonneg(m.downloads), views: nonneg(m.views), rating: Number.isFinite(m.rating) ? m.rating : 0, files: Array.isArray(m.files) ? m.files.map((f) => str(f, 80)) : [] }));
     base.myModules = base.myModules.filter((m) => obj(m) && typeof m.id === 'string')
       .map((m) => ({ ...m, title: str(m.title, 120), author: str(m.author || ME.name, 30), school: str(m.school, 40), cat: str(m.cat || '수업·평가', 30), share: ['전체', '우리 학교', '나만 보기'].includes(m.share) ? m.share : '전체', weeks: nonneg(Number(m.weeks)) || 1, likes: nonneg(m.likes), learners: nonneg(m.learners), items: Array.isArray(m.items) ? m.items.map((x) => str(x, 120)) : [] }));
     base.myWorries = base.myWorries.filter((w) => obj(w) && typeof w.id === 'string')
@@ -107,7 +108,6 @@ function load() {
     base.worryComments = Object.fromEntries(Object.entries(base.worryComments).filter(([, v]) => Array.isArray(v))
       .map(([k, v]) => [k, v.filter(obj).map((c) => ({ ...c, author: str(c.author, 30), body: str(c.body, 1000), date: isDate(c.date) ? c.date : TODAY }))]));
     base.quickDiag = Object.fromEntries(Object.entries(base.quickDiag).filter(([k, v]) => AREAS.some((a) => a.key === k) && Number.isInteger(v) && v >= 1 && v <= SCALE.length));
-    base.subjectAlerts = Object.fromEntries(Object.entries(base.subjectAlerts).filter(([k, v]) => SUBJECTS.includes(k) && typeof v === 'string'));
     return base;
   } catch {
     return initial();

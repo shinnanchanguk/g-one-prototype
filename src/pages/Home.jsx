@@ -191,7 +191,7 @@ export default function Home() {
     <div className="container home">
       <section className="home__hero">
         <div>
-          <span className="mono c-orange">{p.band}{p.subject ? ` · ${p.subject}` : ''} 선생님께 맞춘 성장 콘텐츠</span>
+          <span className="mono c-orange">{p.level}{p.subject ? ` · ${p.subject}` : ''} 선생님께 맞춘 성장 콘텐츠</span>
           <h1>오늘은 무엇을 둘러볼까요?</h1>
           <p>설문 없이 바로 보세요. 고민별 입구를 누르면 그때 한 가지만 여쭤볼게요.</p>
         </div>

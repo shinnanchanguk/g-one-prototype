@@ -63,7 +63,7 @@ export function TrainingCard({ t, compact, defaultOpen = false, thumb }) {
   const kept = !!s.journeyItems[t.id];
   const always = t.delivery === '원격(상시)';
   const dl = daysLeft(t.applyTo);
-  const status = state === 'applied' ? ['신청함', 'blue'] : state === 'soon' ? ['신청 예정', 'ink'] : state === 'closed' ? ['신청 마감', 'ink'] : dl <= 4 ? [`마감 ${dl}일 전`, 'orange'] : ['신청 중', 'green'];
+  const status = state === 'applied' ? ['신청함', 'green'] : state === 'soon' ? ['신청 예정', 'ink'] : state === 'closed' ? ['신청 마감', 'ink'] : dl <= 4 ? [`마감 ${dl}일 전`, 'orange'] : ['신청 중', 'green'];
   const btn = { applied: '신청 완료', open: '신청하기', soon: `${yy(t.applyFrom)}부터 신청`, closed: '신청 마감' }[state];
   return (
     <article className={`tcard ${compact ? 'tcard--compact' : ''} ${open ? 'is-open' : ''}`}>
@@ -91,7 +91,7 @@ export function TrainingCard({ t, compact, defaultOpen = false, thumb }) {
         <span className="tcard__rate"><Icon name="star" size={15} /><b>{t.rating.toFixed(1)}</b><small>({num(t.reviews)})</small></span>
         <span className="tcard__cap mono"><Icon name="users" size={13} />신청 {num(applied)} / 정원 {t.cap == null ? '무제한' : num(t.cap)}</span>
         <div className="tcard__btns">
-          <button className={`btn btn--sm ${state === 'open' ? 'btn--blue' : state === 'applied' ? 'btn--line' : 'btn--ghost'}`} disabled={state === 'closed' || state === 'soon'} onClick={() => act.apply(t)}>
+          <button className={`btn btn--sm ${state === 'open' ? 'btn--dark' : state === 'applied' ? 'btn--line' : 'btn--ghost'}`} disabled={state === 'closed' || state === 'soon'} onClick={() => act.apply(t)}>
             {state === 'applied' && <Icon name="check" size={14} />}{btn}
           </button>
           <button className="btn btn--sm btn--line" onClick={() => setOpen(!open)} aria-expanded={open}>{open ? '접기' : '상세보기'}<Icon name="down" size={14} className="tcard__chev" /></button>
@@ -109,7 +109,7 @@ export function TrainingCard({ t, compact, defaultOpen = false, thumb }) {
           </dl>
           <div className="row-end">
             <button className="btn btn--sm btn--line" onClick={() => act.keep(t)}><Icon name="bookmark" size={14} />{kept ? '성장 여정에 담김' : '나의 성장 여정에 담기'}</button>
-            <button className={`btn btn--sm ${state === 'open' ? 'btn--blue' : 'btn--line'}`} disabled={state === 'closed' || state === 'soon'} onClick={() => act.apply(t)}>{state === 'applied' ? '신청 취소' : btn}</button>
+            <button className={`btn btn--sm ${state === 'open' ? 'btn--dark' : 'btn--line'}`} disabled={state === 'closed' || state === 'soon'} onClick={() => act.apply(t)}>{state === 'applied' ? '신청 취소' : btn}</button>
           </div>
         </div>
       )}
@@ -135,7 +135,7 @@ export function ModuleCard({ m, onOpen }) {
       </div>
       <div className="row-end">
         {onOpen && <button className="btn btn--sm btn--line" onClick={() => onOpen(m)}>자세히</button>}
-        {!m.mine && <button className={`btn btn--sm ${taken ? 'btn--line' : 'btn--blue'}`} onClick={() => { st.toggle('takenModules', m.id); st.toast(taken ? '나의 모듈에서 뺐어요' : '나의 모듈과 학습방에 담았어요', taken ? 'warn' : 'ok'); }}>
+        {!m.mine && <button className={`btn btn--sm ${taken ? 'btn--line' : 'btn--dark'}`} onClick={() => { st.toggle('takenModules', m.id); st.toast(taken ? '나의 모듈에서 뺐어요' : '나의 모듈과 학습방에 담았어요', taken ? 'warn' : 'ok'); }}>
           {taken ? <><Icon name="check" size={14} />담김</> : '나의 모듈에 담기'}
         </button>}
       </div>
@@ -223,7 +223,7 @@ export function OpenClassCard({ o, onOpen, showDist }) {
         <span className="ocls__meta">{o.school} {o.grade} · {shortOffice(o.office)} · {o.teacher} 선생님</span>
       </div>
       <div className="ocls__side">
-        {own ? <Chip tone="orange" solid>내 수업</Chip> : applied ? <Chip tone="blue" solid><Icon name="check" size={12} />신청함</Chip>
+        {own ? <Chip tone="orange" solid>내 수업</Chip> : applied ? <Chip tone="green" solid><Icon name="check" size={12} />신청함</Chip>
           : access === 'other' ? <span className="ocls__lock"><Icon name="lock" size={13} />{shortOffice(o.office)} 선생님 대상</span>
           : <span className={`mono ${left <= 0 ? 'c-orange' : ''}`}>{left <= 0 ? '정원 마감' : `남은 자리 ${left}`}</span>}
         <button className="btn btn--sm btn--line" onClick={() => onOpen(o)}><Icon name="file" size={14} />지도안 보기</button>
@@ -245,7 +245,7 @@ export function OpenClassModal({ o, onClose }) {
   const label = applied ? '참관 신청 취소' : own ? '내가 여는 수업이에요' : access === 'other' ? '대상 지원청이 아니에요' : full ? '정원 마감' : past ? '지난 수업' : '지도안 확인하고 참관 신청';
   return (
     <Modal open={!!o} onClose={onClose} title={`${o.subject} 공개수업`} wide
-      footer={<button className="btn btn--blue" disabled={blocked} onClick={() => {
+      footer={<button className="btn btn--dark" disabled={blocked} onClick={() => {
         st.toggle('classApps', o.id);
         if (!applied) { st.award('활동', 10, `공개수업 참관 신청: ${o.school}`); st.toast('참관 신청 완료 · 성장 여정에 기록했어요'); }
         else st.toast('참관 신청을 취소했어요', 'warn');
