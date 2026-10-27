@@ -18,7 +18,7 @@ export function ProfileModal({ open, onClose }) {
   };
   const later = () => { st.patch((s) => ({ profile: { ...s.profile, set: true } })); onClose(); };
   return (
-    <Modal open={open} onClose={st.s.profile.set ? onClose : later} title="선생님께 맞게 보여 드릴게요"
+    <Modal open={open} onClose={st.s.profile.set ? onClose : later} title="선생님에 대해 알려주세요"
       footer={<>
         {!st.s.profile.set && <button className="btn btn--line" onClick={later}>나중에 고를게요</button>}
         <button className="btn btn--dark" onClick={save}><Icon name="check" size={15} />이대로 보기</button>
