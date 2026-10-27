@@ -111,7 +111,7 @@ const LANES = [
   { key: 'life', label: '생활지도·학부모', icon: 'heart', tone: 'pink', cats: ['생활교육', '학급경영'] },
   { key: 'change', label: 'AI·디지털 도구', icon: 'spark', tone: 'purple', cats: ['디지털·AI'] },
   { key: 'self', label: '지친 마음 돌보기', icon: 'leaf', tone: 'green', cats: ['정신건강·자기돌봄'] },
-  { key: 'mgmt', label: '업무 빨리 끝내기', icon: 'clock', tone: 'orange', cats: ['업무 역량'] },
+  { key: 'mgmt', label: '업무 효율화', icon: 'clock', tone: 'orange', cats: ['업무 역량'] },
 ];
 const CAT_THUMB = { '수업·평가': 0, 교육과정: 1, 생활교육: 2, 학급경영: 2, '디지털·AI': 3, '정신건강·자기돌봄': 1, '업무 역량': 4, 진로교육: 4 };
 
