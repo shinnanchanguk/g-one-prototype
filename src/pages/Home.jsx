@@ -54,7 +54,7 @@ function useLive(delay = 12000) {
   return arrived;
 }
 
-function AskForm() {
+function AskForm({ onPosted }) {
   const st = useStore();
   const [draft, setDraft] = useState('');
   const post = (e) => {
@@ -65,6 +65,7 @@ function AskForm() {
     st.award('활동', 5, '고민 남기기');
     setDraft('');
     st.toast('고민을 남겼어요 · 동료 선생님들의 답변을 기다려 보세요');
+    onPosted?.();
   };
   return (
     <form className="hp__ask" onSubmit={post}>
@@ -109,7 +110,7 @@ const LANES = [
   { key: 'life', label: '생활지도·학부모', icon: 'heart', tone: 'pink', cats: ['생활교육', '학급경영'] },
   { key: 'change', label: 'AI·디지털 도구', icon: 'spark', tone: 'purple', cats: ['디지털·AI'] },
   { key: 'self', label: '지친 마음 돌보기', icon: 'leaf', tone: 'green', cats: ['정신건강·자기돌봄'] },
-  { key: 'pro', label: '업무 빨리 끝내기', icon: 'clock', tone: 'orange', cats: ['업무 역량'] },
+  { key: 'mgmt', label: '업무 빨리 끝내기', icon: 'clock', tone: 'orange', cats: ['업무 역량'] },
 ];
 const CAT_THUMB = { '수업·평가': 0, 교육과정: 1, 생활교육: 2, 학급경영: 2, '디지털·AI': 3, '정신건강·자기돌봄': 1, '업무 역량': 4, 진로교육: 4 };
 const matCat = (m) => (m.type === '생활교육' ? '생활교육' : /AI|디지털/.test(m.title) ? '디지털·AI' : m.type === '진로자료' ? '진로교육' : '수업·평가');
@@ -137,7 +138,7 @@ function ContentCard({ c, big }) {
         <div className="chips"><Chip tone={c.kind === '연수' ? 'blue' : c.kind === '자료' ? 'purple' : 'green'}>{c.kind}</Chip><Chip>{c.cat}</Chip>{c.share === '우리 학교' && <Chip tone="orange" solid>우리 학교</Chip>}</div>
         <b className="fc__title">{c.title}</b>
         <span className="fc__who"><Avatar name={c.who} size={22} /> {c.who} · {c.where}</span>
-        <span className="fc__meta mono"><Icon name="heart" size={13} /> {num(c.likes)} <Icon name="users" size={13} /> {num(c.users)} <Icon name="clock" size={13} /> {c.meta}</span>
+        <span className="fc__meta mono"><span className="nowrap"><Icon name="heart" size={13} /> {num(c.likes)}</span><span className="nowrap"><Icon name="users" size={13} /> {num(c.users)}</span><span className="nowrap"><Icon name="clock" size={13} /> {c.meta}</span></span>
       </div>
     </Link>
   );
@@ -154,12 +155,12 @@ function Worries() {
   const list = [...fresh, ...(sort === '공감 많은 순' ? [...rest].sort((a, b) => b.likes - a.likes) : rest)].slice(0, 4);
   return (
     <Panel className="home__side" tone="purple" icon="message" title="고민 나눔" code="동행 · 4.1" more="/together/worries">
-      <AskForm />
+      <AskForm onPosted={() => setSort('최신순')} />
       <div className="row-between">
         <Tabs size="sm" value={sort} onChange={setSort} items={['공감 많은 순', '최신순']} />
         {live && !seen && <button className="newpill" onClick={() => { setSeen(true); setSort('최신순'); }}><Icon name="refresh" size={14} />새 고민 1개</button>}
       </div>
-      <div className="hworries">{list.map((w) => <HomeWorry key={w.id} w={w} fresh={!!w.live} />)}</div>
+      <div className="hworries">{list.map((w) => <HomeWorry key={w.id} w={w} fresh={!!w.live || (w.mine && w.date === TODAY)} />)}</div>
     </Panel>
   );
 }
@@ -188,7 +189,7 @@ export default function Home() {
         <div>
           <span className="mono c-orange">{p.band}{p.subject ? ` · ${p.subject}` : ''} 선생님께 맞춘 성장 콘텐츠</span>
           <h1>오늘은 무엇을 둘러볼까요?</h1>
-          <p>설문 없이 바로 보세요. 마음에 드는 것을 누르면 그때 필요한 것만 여쭤볼게요.</p>
+          <p>설문 없이 바로 보세요. 고민별 입구를 누르면 그때 한 가지만 여쭤볼게요.</p>
         </div>
         <form className="home__search" onSubmit={search} role="search">
           <Icon name="search" size={18} />

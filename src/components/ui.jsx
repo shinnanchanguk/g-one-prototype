@@ -164,7 +164,7 @@ export function InfoPop({ label, title, children, className = '' }) {
     const a = btn.current?.getBoundingClientRect();
     const m = box.current;
     if (!a || !m) return;
-    const W = window.innerWidth, H = window.innerHeight, gap = 8, edge = 12;
+    const W = document.documentElement.clientWidth, H = document.documentElement.clientHeight, gap = 8, edge = 12;
     const w = m.offsetWidth, h = m.offsetHeight;
     let top = a.bottom + gap;
     if (top + h > H - edge && a.top - gap - h >= edge) top = a.top - gap - h;

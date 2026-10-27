@@ -92,7 +92,7 @@ function load() {
     if (typeof base.points.activity !== 'number' || typeof base.points.interaction !== 'number') base.points = initial().points;
     base.profile = cleanProfile(base.profile);
     if (!CLASS_VIEWS.includes(base.classView)) base.classView = 'feed';
-    base.diary = base.diary.filter((d) => d && typeof d === 'object').map((d) => ({ ...d, kind: fixKind(d.kind) }));
+    base.diary = base.diary.filter((d) => obj(d)).map((d) => ({ ...d, title: str(d.title, 80), body: str(d.body, 2000), date: isDate(d.date) ? d.date : TODAY, kind: fixKind(d.kind) }));
     base.goals = base.goals.filter((g) => g && typeof g === 'object' && Array.isArray(g.tasks))
       .map((g) => ({ ...g, id: str(g.id, 40), title: str(g.title, 120), area: areaKey(g.area), created: isDate(g.created) ? g.created : TODAY, tasks: g.tasks.filter((t) => t && typeof t === 'object').map((t) => ({ ...t, t: str(t.t, 120), kind: fixKind(t.kind) })) }));
     base.diagnoses = base.diagnoses.filter((d) => obj(d) && isDate(d.date)).map((d) => ({ ...d, label: str(d.label, 40), scores: fixScores(d.scores) }));

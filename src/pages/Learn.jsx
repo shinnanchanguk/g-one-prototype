@@ -4,7 +4,7 @@ import { DELIVERY_LABEL, MaterialCard, ModuleCard, TrainingCard, trainingState }
 import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Empty, Field, Modal, PageHead, Panel, Progress, SearchBox, Select, Tabs, fmtDate, num } from '../components/ui.jsx';
 import { LEVELS, MATERIALS, ME, MODULES, OUTCOMES, ROOMS, TODAY, TRAININGS } from '../data/seed.js';
-import { sortByProfile } from '../fit.js';
+import { fitsBand, sortByProfile } from '../fit.js';
 import { uid, useStore } from '../store.jsx';
 
 const CATS = ['전체', '수업·평가', '디지털·AI', '생활교육', '학급경영', '진로교육', '교육과정', '업무 역량', '정신건강·자기돌봄'];
@@ -111,7 +111,7 @@ export function Modules() {
   const [form, setForm] = useState({ title: '', cat: '수업·평가', weeks: 3, items: [], custom: '', share: '전체' });
   const all = [...st.s.myModules, ...MODULES];
   const canSee = (m) => m.mine || m.share === '전체' || (m.share === '우리 학교' && m.school === p.school);
-  const rec = sortByProfile(all.filter((m) => !m.mine && canSee(m) && (cat === '전체' || m.cat === cat)), p).sort((a, b) => (b.share === '우리 학교') - (a.share === '우리 학교'));
+  const rec = sortByProfile(all.filter((m) => !m.mine && canSee(m) && (cat === '전체' || m.cat === cat)), p).sort((a, b) => (b.share === '우리 학교' && fitsBand(b, p.band)) - (a.share === '우리 학교' && fitsBand(a, p.band)));
   const made = all.filter((m) => m.mine);
   const taken = all.filter((m) => !m.mine && st.s.takenModules[m.id]);
 

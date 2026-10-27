@@ -31,14 +31,15 @@ function Group({ title, sub, items, onOpen, max = 4, dist }) {
   );
 }
 
-function FeedView({ list, nearExtra, p, onOpen }) {
+function FeedView({ list, nearExtra, p, band, onOpen }) {
+  const b = band === '전체 학교급' ? p.band : band;
   const near = neighborOffices(p.office);
   const used = new Set();
   const take = (f) => list.filter((o) => !used.has(o.id) && f(o)).map((o) => { used.add(o.id); return o; });
   const school = take((o) => o.scope === '학교');
   const mine = take((o) => o.office === p.office);
   const subj = p.subject ? take((o) => o.subject === p.subject && o.scope === '도') : [];
-  const doBand = take((o) => o.scope === '도' && o.audience.includes(p.band));
+  const doBand = take((o) => o.scope === '도' && o.audience.includes(b));
   const nearby = [...take((o) => near.includes(o.office)), ...nearExtra.filter((o) => !used.has(o.id))];
   const rest = take(() => true);
   return (
@@ -46,7 +47,7 @@ function FeedView({ list, nearExtra, p, onOpen }) {
       <Group title="우리 학교 동료장학" sub="같은 학교 선생님에게만 보여요" items={school} onOpen={onOpen} />
       <Group title={`우리 지원청 · ${shortOffice(p.office)}`} sub="지원청 단위와 우리 지역 도 단위 공개" items={mine} onOpen={onOpen} />
       <Group title={`같은 교과 · ${p.subject}`} sub="도 단위 공개" items={subj} onOpen={onOpen} />
-      <Group title={`도 단위 · ${p.band} 대상`} items={doBand} onOpen={onOpen} />
+      <Group title={`도 단위 · ${b} 대상`} items={doBand} onOpen={onOpen} />
       <Group title="이웃 지원청" sub={`${near.map(shortOffice).join(' · ')} · 지원청 단위는 그 지원청 선생님 대상이라 지도안만 볼 수 있어요`} items={nearby} onOpen={onOpen} />
       <Group title="그 밖의 공개수업" items={rest} onOpen={onOpen} max={2} />
       {!list.length && <Empty text="조건에 맞는 공개수업이 없어요. 범위나 지역을 넓혀 보세요." />}
@@ -158,8 +159,10 @@ function MapView({ list, p, regions, setRegions, onOpen }) {
 }
 
 function CalView({ list, onOpen }) {
-  const [ym, setYm] = useState([2026, 11]);
-  const [day, setDay] = useState('2026-11-04');
+  // 오늘 이후 첫 공개수업이 있는 날로 연다
+  const first = [...list].filter((o) => o.date >= TODAY).sort((a, b) => a.date.localeCompare(b.date))[0]?.date ?? TODAY;
+  const [ym, setYm] = useState([Number(first.slice(0, 4)), Number(first.slice(5, 7))]);
+  const [day, setDay] = useState(first);
   const move = (d) => setYm(([y, m]) => { const n = m + d; return n < 1 ? [y - 1, 12] : n > 12 ? [y + 1, 1] : [y, n]; });
   const dayList = list.filter((o) => o.date === day);
   return (
@@ -228,7 +231,7 @@ export function OpenClasses() {
     if (!f.audience.length) { st.toast('참관 대상 학교급을 하나 이상 골라 주세요', 'warn'); return; }
     const flow = f.flow.split('\n').map((x) => x.trim().slice(0, 120)).filter(Boolean).slice(0, 6);
     const o = {
-      id: uid('o'), date: f.date, time: f.time, city: p.city, school: ME.school, level: { 유치원: '유치원', 초등: '초등학교', 중등: '중학교', 특수: '특수학교' }[p.band], grade: f.grade || '학급 미정', subject: f.subject, topic: f.topic.trim(), teacher: ME.name,
+      id: uid('o'), date: f.date, time: f.time, city: p.city, school: p.school, level: { 유치원: '유치원', 초등: '초등학교', 중등: '중학교', 특수: '특수학교' }[p.band], grade: f.grade || '학급 미정', subject: f.subject, topic: f.topic.trim(), teacher: ME.name,
       scope: f.scope, cap: Math.max(1, Math.min(60, Number(f.cap) || 1)), applied: 0, mode: '대면', office: p.office, audience: f.audience, mine: true,
       plan: { file: f.file || `지도안_${f.subject}.hwpx`, goal: f.goal.trim() || f.topic.trim(), flow: flow.length ? flow : ['도입 · 생각을 여는 질문', `전개 · ${f.topic.trim()}`, '정리 · 배운 점 나누기'] },
     };
@@ -284,7 +287,7 @@ export function OpenClasses() {
             </div>
           )}
 
-          {view === 'feed' && <FeedView list={upcoming} nearExtra={regions === 'all' ? nearExtra : []} p={p} onOpen={setOpen} />}
+          {view === 'feed' && <FeedView list={upcoming} nearExtra={regions === 'all' ? nearExtra : []} p={p} band={band} onOpen={setOpen} />}
           {view === 'subject' && <SubjectView list={[...upcoming, ...lockedAll.filter((o) => !upcoming.some((u) => u.id === o.id))]} all={all.filter((o) => o.date >= TODAY && classAccess(o, p) !== 'hidden')} p={p} onOpen={setOpen} />}
           {view === 'week' && <WeekView list={filtered} onOpen={setOpen} />}
           {view === 'map' && <MapView list={upcoming} p={p} regions={regions} setRegions={setRegions} onOpen={setOpen} />}
@@ -333,7 +336,7 @@ export function OpenClasses() {
       )}
 
       {tab === 'status' && (
-        <Panel title="참관 신청 현황" desc="신청 현황은 성장 > 성장 여정에 함께 기록됩니다.">
+        <Panel title="참관 신청 현황" desc="신청 현황은 성장 메뉴의 성장 여정에 함께 기록됩니다.">
           {mine.length ? <div className="oclist">{mine.map((o) => <OpenClassCard key={o.id} o={o} onOpen={setOpen} />)}</div> : <Empty text="아직 참관 신청이 없어요" />}
           {st.s.myClasses.length > 0 && <>
             <p className="field__label mt">내가 공개한 수업</p>

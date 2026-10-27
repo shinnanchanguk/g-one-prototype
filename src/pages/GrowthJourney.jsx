@@ -167,24 +167,26 @@ function History() {
 // 동료의 추천·도움됨·자료 활용 평가도 함께 본다(보고서 1.2)
 const REACTIONS = { mgmt: [228, 44, 4.8], teach: [216, 41, 4.7], change: [172, 18, 4.7], collab: [64, 9, 4.5] };
 function Expert() {
-  const shown = [...AREAS].sort((a, b) => doneOf(b) - doneOf(a)).slice(0, 4);
+  const [all, setAll] = useState(false);
+  const sorted = [...AREAS].sort((a, b) => doneOf(b) - doneOf(a));
+  const shown = all ? sorted : sorted.slice(0, 4);
   return (
     <div>
-      <p className="lead">{EXPERT_RULE} 동료의 추천(좋아요), 멘토링 뒤 도움됨 평가, 자료 활용 평가도 함께 반영돼요.</p>
+      <p className="lead">{EXPERT_RULE} 인증은 세 단계 뱃지로 판정하고, 동료의 추천(좋아요)·멘토링 뒤 도움됨·자료 활용 평가는 멘토 추천 순서에 함께 반영돼요.</p>
       <div className="experts">
         {shown.map((a) => {
-          const r = REACTIONS[a.key] ?? [0, 0, 0];
+          const r = REACTIONS[a.key];
+          const step = BADGE_STAGES[doneOf(a)];
           return (
             <div key={a.key} className={`expert ${doneOf(a) === 3 ? 'is-ok' : ''}`}>
               <AreaLadder area={a} compact />
-              {[['받은 좋아요', r[0], 200], ['도움됨 평가', r[1], 30], ['자료 활용 평점', r[2], 4.5]].map(([k, v, n]) => (
-                <div key={k} className="expert__row"><span>{k}</span><Progress value={Math.min(100, (v / n) * 100)} tone={doneOf(a) === 3 ? 'green' : 'orange'} /><span className="mono">{v} / {n}</span></div>
-              ))}
-              <p className="expert__foot">{doneOf(a) === 3 ? '인증 완료 · 이 영역 멘토 추천에 이름이 올라가요' : `다음 단계: ${BADGE_STAGES[doneOf(a)].key} · ${badgeOf(a.key, BADGE_STAGES[doneOf(a)].key)?.how ?? BADGE_STAGES[doneOf(a)].rule}`}</p>
+              <p className="expert__foot">{doneOf(a) === 3 ? '인증 완료 · 이 영역 멘토 추천에 이름이 올라가요' : `다음 단계: ${step.key} · ${badgeOf(a.key, step.key)?.how ?? step.rule}`}</p>
+              {r && <p className="expert__react"><span className="mono">함께 보는 동료 반응</span>좋아요 {r[0]} · 도움됨 {r[1]} · 자료 활용 평점 {r[2]}</p>}
             </div>
           );
         })}
       </div>
+      <button className="more mt" onClick={() => setAll(!all)}>{all ? '접기' : '10개 영역 모두 보기'}</button>
     </div>
   );
 }

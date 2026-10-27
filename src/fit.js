@@ -2,6 +2,8 @@
 import { CITIES } from './data/gyeonggiMap.js';
 import { BANDS, ME, OFFICES, SUBJECTS, bandOf } from './data/seed.js';
 
+// 프로토타입 샘플: 학교급을 바꾸면 '우리 학교'도 그 학교급의 샘플 학교로 바뀐다
+export const SCHOOL_BY_BAND = { 유치원: '햇살유치원', 초등: ME.school, 중등: '팔달샘중학교', 특수: '나래학교' };
 export const DEFAULT_PROFILE = { band: '초등', subject: '', office: ME.office, school: ME.school, city: '수원시', sortBy: '학교급', set: false };
 
 export function cleanProfile(p) {
@@ -12,7 +14,7 @@ export function cleanProfile(p) {
     band: BANDS.includes(p.band) ? p.band : d.band,
     subject: SUBJECTS.includes(p.subject) ? p.subject : '',
     office,
-    school: d.school,
+    school: SCHOOL_BY_BAND[BANDS.includes(p.band) ? p.band : d.band],
     city: OFFICES.find((o) => o.name === office).cities.includes(p.city) ? p.city : OFFICES.find((o) => o.name === office).cities[0],
     sortBy: p.sortBy === '교과' ? '교과' : '학교급',
     set: p.set === true,

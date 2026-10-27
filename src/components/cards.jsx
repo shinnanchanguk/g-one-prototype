@@ -87,7 +87,7 @@ export function TrainingCard({ t, compact, defaultOpen = false }) {
       </div>
       <div className="tcard__side">
         <span className="tcard__rate"><Icon name="star" size={15} /><b>{t.rating.toFixed(1)}</b><small>({num(t.reviews)})</small></span>
-        <span className="tcard__cap mono"><Icon name="users" size={13} />{num(applied)} / {t.cap == null ? '무제한' : num(t.cap)}</span>
+        <span className="tcard__cap mono"><Icon name="users" size={13} />신청 {num(applied)} / 정원 {t.cap == null ? '무제한' : num(t.cap)}</span>
         <div className="tcard__btns">
           <button className={`btn btn--sm ${state === 'open' ? 'btn--blue' : state === 'applied' ? 'btn--line' : 'btn--ghost'}`} disabled={state === 'closed' || state === 'soon'} onClick={() => act.apply(t)}>
             {state === 'applied' && <Icon name="check" size={14} />}{btn}
@@ -275,7 +275,7 @@ export function OpenClassModal({ o, onClose }) {
       </div>
       {access === 'other' && <p className="note"><Icon name="lock" size={15} /> 지원청 단위 공개라 {o.office} 선생님만 신청할 수 있어요. 지도안은 누구나 볼 수 있어요.</p>}
       {o.scope === '학교' && <p className="note"><Icon name="school" size={15} /> 우리 학교 안에서만 공개한 동료장학 수업이에요.</p>}
-      <p className="note"><Icon name="route" size={15} /> 참관 신청 현황은 <b>성장 &gt; 성장 여정</b>에 자동으로 연결됩니다.</p>
+      <p className="note"><Icon name="route" size={15} /><span>참관 신청 현황은 성장 메뉴의 <b>성장 여정</b>에 자동으로 연결돼요.</span></p>
     </Modal>
   );
 }

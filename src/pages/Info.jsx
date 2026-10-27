@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CommunityCard, MaterialCard, OpenClassModal, TrainingCard } from '../components/cards.jsx';
+import { CommunityCard, MaterialCard, ModuleCard, OpenClassCard, OpenClassModal, TrainingCard } from '../components/cards.jsx';
 import Icon from '../components/Icon.jsx';
 import { MENU } from '../components/Layout.jsx';
 import { Chip, Empty, PageHead, Panel, SearchBox, fmtDate } from '../components/ui.jsx';
-import { COMMUNITIES, FAQ, MATERIALS, MENTORS, NOTICES, OPEN_CLASSES, OUTCOMES, TRAININGS, WORRIES } from '../data/seed.js';
+import { COMMUNITIES, FAQ, MATERIALS, MENTORS, MODULES, NOTICES, OPEN_CLASSES, OUTCOMES, TRAININGS, WORRIES } from '../data/seed.js';
+import { classAccess } from '../fit.js';
 import { useStore } from '../store.jsx';
 
 const DIRECTIONS = [
@@ -110,7 +111,9 @@ export function Search() {
     trainings: TRAININGS.filter((x) => has(x.title + x.desc + x.cat)),
     materials: [...st.s.myMaterials, ...MATERIALS].filter((x) => has(x.title + x.desc + x.subject)),
     comms: [...st.s.myComms, ...COMMUNITIES].filter((x) => has(x.name + x.desc + x.tags.join(' '))),
-    classes: OPEN_CLASSES.filter((x) => has(x.topic + x.subject + x.school)),
+    modules: [...st.s.myModules, ...MODULES].filter((x) => (x.mine || x.share === '전체' || (x.share === '우리 학교' && x.school === st.s.profile.school)) && has(x.title + x.items.join(' ') + x.cat)),
+    // 다른 학교의 '우리 학교' 공개는 검색에도 나오지 않는다
+    classes: [...st.s.myClasses, ...OPEN_CLASSES].filter((x) => classAccess(x, st.s.profile) !== 'hidden' && has(x.topic + x.subject + x.school)),
     worries: [...st.s.myWorries, ...WORRIES].filter((x) => has(x.title + x.body)),
     mentors: MENTORS.filter((x) => has(x.name + x.intro + x.fields.join(' '))),
     outcomes: OUTCOMES.filter((x) => has(x.title + x.summary)),
@@ -118,15 +121,16 @@ export function Search() {
   const total = Object.values(r).reduce((a, x) => a + x.length, 0);
   return (
     <div className="container">
-      <PageHead title="통합 검색" desc="연수, 교육자료, 공동체, 공개수업, 고민, 멘토, 성과를 한 번에 찾아요." />
+      <PageHead title="통합 검색" desc="연수, 배움 모듈, 교육자료, 공동체, 공개수업, 고민, 멘토, 성과를 한 번에 찾아요." />
       <SearchBox value={q} onChange={(v) => setSp(v ? { q: v } : {})} placeholder="예) AI, 질문, 루브릭, 마음" />
       {!q && <div className="chips mt">{['AI', '질문', '평가', '마음', '수학', '생활교육'].map((k) => <button key={k} className="chip chip--btn" onClick={() => setSp({ q: k })}>#{k}</button>)}</div>}
       {q && <p className="mono mt">「{q}」 검색 결과 {total}건</p>}
       {q && !total && <Empty text="검색 결과가 없어요" />}
       {r.trainings.length > 0 && <Panel title="연수" code={`${r.trainings.length}`}><div className="tcards">{r.trainings.map((x) => <TrainingCard key={x.id} t={x} />)}</div></Panel>}
+      {r.modules.length > 0 && <Panel title="배움 모듈" code={`${r.modules.length}`}><div className="modgrid">{r.modules.map((x) => <ModuleCard key={x.id} m={x} />)}</div></Panel>}
       {r.materials.length > 0 && <Panel title="교육자료" code={`${r.materials.length}`}><div className="mgrid">{r.materials.map((x) => <MaterialCard key={x.id} m={x} />)}</div></Panel>}
       {r.comms.length > 0 && <Panel title="공동체" code={`${r.comms.length}`}><div className="cgrid">{r.comms.map((x) => <CommunityCard key={x.id} c={x} />)}</div></Panel>}
-      {r.classes.length > 0 && <Panel title="공개수업" code={`${r.classes.length}`}><ul className="olist">{r.classes.map((x) => <li key={x.id}><button onClick={() => setO(x)}><span className="dot bg-blue" /><span><b>{x.subject} · {x.topic}</b><small>{fmtDate(x.date)} · {x.school}</small></span></button></li>)}</ul></Panel>}
+      {r.classes.length > 0 && <Panel title="공개수업" code={`${r.classes.length}`}><div className="oclist">{r.classes.map((x) => <OpenClassCard key={x.id} o={x} onOpen={setO} />)}</div></Panel>}
       {r.worries.length > 0 && <Panel title="고민" code={`${r.worries.length}`}><ul className="olist">{r.worries.map((x) => <li key={x.id}><Link to={`/together/worries/${x.id}`}><span className="dot bg-green" /><span><b>{x.title}</b><small>#{x.tag}</small></span></Link></li>)}</ul></Panel>}
       {r.mentors.length > 0 && <Panel title="멘토" code={`${r.mentors.length}`}><ul className="olist">{r.mentors.map((x) => <li key={x.id}><Link to={`/together/mentors?m=${x.id}`}><span className="dot bg-purple" /><span><b>{x.name} 선생님 {x.verified && `· ${x.verified}`}</b><small>{x.fields.join(', ')}</small></span></Link></li>)}</ul></Panel>}
       {r.outcomes.length > 0 && <Panel title="성과나눔" code={`${r.outcomes.length}`}><ul className="olist">{r.outcomes.map((x) => <li key={x.id}><Link to="/share/outcomes"><span className="dot bg-orange" /><span><b>{x.title}</b><small>{x.kind} · {x.school}</small></span></Link></li>)}</ul></Panel>}

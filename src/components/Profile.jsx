@@ -1,7 +1,7 @@
 // 처음 들어오면 학교급·교과·지원청을 묻고, 모든 목록이 이 기준으로 정렬된다.
 import { useEffect, useState } from 'react';
 import { BANDS, OFFICES, SUBJECTS } from '../data/seed.js';
-import { cleanProfile, shortOffice } from '../fit.js';
+import { SCHOOL_BY_BAND, cleanProfile, shortOffice } from '../fit.js';
 import { useStore } from '../store.jsx';
 import Icon from './Icon.jsx';
 import { Field, Modal } from './ui.jsx';
@@ -23,13 +23,13 @@ export function ProfileModal({ open, onClose }) {
         {!st.s.profile.set && <button className="btn btn--line" onClick={later}>나중에 고를게요</button>}
         <button className="btn btn--dark" onClick={save}><Icon name="check" size={15} />이대로 보기</button>
       </>}>
-      <p className="lead">세 가지만 알려 주시면 연수, 배움 모듈, 교육자료, 공개수업을 선생님께 맞는 것부터 보여 드려요. 머리말의 <b>내 정보</b>에서 언제든 바꿀 수 있어요.</p>
+      <p className="lead">몇 가지만 알려 주시면 연수, 배움 모듈, 교육자료, 공개수업을 선생님께 맞는 것부터 보여 드려요. 머리말의 <b>내 정보</b>에서 언제든 바꿀 수 있어요.</p>
       <div className="field">
         <span className="field__label">학교급</span>
         <div className="seg seg--full" role="radiogroup" aria-label="학교급">
           {BANDS.map((b) => <button key={b} type="button" role="radio" aria-checked={f.band === b} className={f.band === b ? 'is-on' : ''} onClick={() => setF({ ...f, band: b })}>{b}</button>)}
         </div>
-        <span className="field__hint">중학교와 고등학교는 서로 오가며 보시니까 중등 하나로 묶었어요. 특수는 특수끼리 먼저 보여요.</span>
+        <span className="field__hint">중학교와 고등학교는 서로 오가며 보시니까 중등 하나로 묶었어요. 특수는 특수끼리 먼저 보여요. 체험용이라 우리 학교는 {SCHOOL_BY_BAND[f.band]}로 정해져요.</span>
       </div>
       <Field label={f.band === '중등' ? '담당 교과 (꼭 골라 주세요)' : '담당 교과 (선택)'} hint="보건·상담·사서처럼 학교급보다 교과가 중요한 선생님도 골라 주세요.">
         <select className="input" value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })}>
