@@ -4,17 +4,19 @@ import { CITIES } from './data/gyeonggiMap.js';
 import { DUTY_SUBJECTS, ME, OFFICES, SCHOOL_LEVELS, SUBJECT_ALIAS, bandOf } from './data/seed.js';
 
 // 목록을 맞출 때 쓰는 학교급 묶음: 중·고는 서로 오가며 보니 '중등'으로, 특수교육 선생님은 '특수'로 본다
-export const bandFor = (level, subject) => (subject === '특수교육' ? '특수' : { 유치원: '유치원', 초등학교: '초등', 중학교: '중등', 고등학교: '중등' }[level] ?? '초등');
+const LEVEL_BAND = { 유치원: '유치원', 초등학교: '초등', 중학교: '중등', 고등학교: '중등' };
+export const bandFor = (level, subject) => (subject === '특수교육' ? '특수' : Object.hasOwn(LEVEL_BAND, level) ? LEVEL_BAND[level] : '초등');
 // 프로토타입 샘플: 학교급을 바꾸면 '우리 학교'도 그 학교급의 샘플 학교로 바뀐다
 export const SCHOOL_BY_LEVEL = { 유치원: '햇살유치원', 초등학교: ME.school, 중학교: '팔달샘중학교', 고등학교: '매여울고등학교' };
-export const schoolFor = (level, subject) => (subject === '특수교육' ? '나래학교' : SCHOOL_BY_LEVEL[level] ?? ME.school);
+export const schoolFor = (level, subject) => (subject === '특수교육' ? '나래학교' : Object.hasOwn(SCHOOL_BY_LEVEL, level) ? SCHOOL_BY_LEVEL[level] : ME.school);
 export const DEFAULT_PROFILE = { level: '초등학교', subject: '', band: '초등', office: ME.office, school: ME.school, city: '수원시', set: false };
 export const SUBJECT_MAX = 20;
 // 목록에 없는 담당은 직접 적을 수 있다(줄바꿈·제어 문자 없이 짧게)
 export const cleanSubject = (v) => {
   if (typeof v !== 'string') return '';
-  const t = v.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, SUBJECT_MAX);
-  return SUBJECT_ALIAS[t] ?? t;
+  // 글자 수는 이모지 같은 겹글자도 한 글자로 센다
+  const t = Array.from(v.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim()).slice(0, SUBJECT_MAX).join('');
+  return Object.hasOwn(SUBJECT_ALIAS, t) ? SUBJECT_ALIAS[t] : t;
 };
 // 담당이 특수교육·상담·보건·사서·영양이면 같은 담당 자료를, 아니면 같은 학교급 자료를 먼저 보여 준다
 export const sortModeFor = (p) => (DUTY_SUBJECTS.includes(p.subject) ? '교과' : '학교급');
@@ -24,7 +26,7 @@ export function cleanProfile(p) {
   const d = DEFAULT_PROFILE;
   if (!p || typeof p !== 'object') return { ...d };
   // 예전 체험판은 학교급 묶음(band)만 저장했다. 특수였으면 담당을 특수교육으로 옮긴다
-  const level = SCHOOL_LEVELS.includes(p.level) ? p.level : OLD_BAND_LEVEL[p.band] ?? d.level;
+  const level = SCHOOL_LEVELS.includes(p.level) ? p.level : Object.hasOwn(OLD_BAND_LEVEL, p.band) ? OLD_BAND_LEVEL[p.band] : d.level;
   const subject = cleanSubject(p.subject) || (!p.level && p.band === '특수' ? '특수교육' : '');
   const office = OFFICES.some((o) => o.name === p.office) ? p.office : d.office;
   const cities = OFFICES.find((o) => o.name === office).cities;

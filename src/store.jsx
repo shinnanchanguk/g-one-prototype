@@ -45,7 +45,7 @@ const SCOPES = ['학교', '지원청', '도'];
 const CITY_OK = new Set(CITIES.map((c) => c.name));
 const str = (v, n) => String(v ?? '').slice(0, n);
 // 예전 체험판의 교과 이름(도덕·정보·진로 등)을 도름스 분류 이름으로 옮긴다
-const subj = (v) => SUBJECT_ALIAS[v] ?? v;
+const subj = (v) => (Object.hasOwn(SUBJECT_ALIAS, v) ? SUBJECT_ALIAS[v] : v);
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const isDate = (v) => { try { return typeof v === 'string' && DATE.test(v) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v; } catch { return false; } };
 const obj = (x) => x && typeof x === 'object' && !Array.isArray(x);
