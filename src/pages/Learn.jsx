@@ -239,7 +239,7 @@ export function Materials() {
         <Select label="유형" value={type} onChange={setType} options={['전체 유형', '수업자료', '학습지도안', '장학자료', '평가자료', '생활교육', '진로자료']} />
         <Select label="학교급" value={level} onChange={setLevel} options={['전체 학교급', ...LEVELS]} />
       </div>
-      <div className="row-between"><Tabs size="sm" className="tabs--scroll" value={sort} onChange={setSort} items={['나에게 맞는 순', '좋아요 순', '최신 등록순', '다운로드 순']} /><span className="mono">{list.length}건</span></div>
+      <div className="row-between sortrow"><Tabs size="sm" className="tabs--scroll" value={sort} onChange={setSort} items={['나에게 맞는 순', '좋아요 순', '최신 등록순', '다운로드 순']} /><span className="mono">{list.length}건</span></div>
       <div className="mgrid">{list.map((m, i) => <MaterialCard key={m.id} m={m} thumb={matImgs[i]} />)}</div>
       {!list.length && <Empty text="조건에 맞는 자료가 없어요" />}
 

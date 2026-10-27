@@ -211,6 +211,8 @@ i { display: inline-block; width: 1px; height: 0.8em; background: var(--line); m
 /* ── 입력 ── */
 .input, .ta, select.input { width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 10px 14px; outline: 0; font-size: 14.5px; }
 input.input, select.input { height: 44px; padding-top: 0; padding-bottom: 0; }
+/* 파일 칸은 브라우저가 버튼을 위쪽에 그려서 위아래 여백을 돌려준다 */
+input.input[type=file] { padding-top: 9px; padding-bottom: 9px; }
 .ta { resize: vertical; line-height: 1.6; }
 .input:focus, .ta:focus { border-color: var(--ink); }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -1000,6 +1002,7 @@ span.avatar.avatar { color: #fff; }
   .fc-grid { grid-template-columns: 1fr 1fr; }
   .fc--big { grid-column: 1 / -1; grid-row: auto; }
   .fc--big .fc__thumb { min-height: 120px; max-height: 160px; }
+  .fc-grid--n4 > .fc:nth-child(4) { grid-column: 1 / -1; }
 }
 @media (max-width: 960px) {
   .home__main { grid-template-columns: 1fr; }
@@ -1016,6 +1019,7 @@ span.avatar.avatar { color: #fff; }
   .lane { flex: 0 0 148px; padding: 10px 12px; }
   .cal__n { min-width: 14px; height: 14px; font-size: 9px; padding: 0 3px; }
   .fc-grid { grid-template-columns: 1fr; }
+  .fc-grid--n4 > .fc:nth-child(4) { grid-column: auto; }
   .home__search { height: 48px; }
 }
 
@@ -1034,3 +1038,14 @@ span.avatar.avatar { color: #fff; }
   .tabs--scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; min-width: 0; }
   .tabs--scroll::-webkit-scrollbar { display: none; }
 }
+
+/* 카드가 4장인 입구는 마지막 카드를 두 칸으로 펴서 격자 오른쪽 아래가 비지 않게 */
+@media (min-width: 1181px) { .fc-grid--n4 > .fc:nth-child(4) { grid-column: span 2; } }
+/* 좁은 사진 칸에서도 분야 알약은 한 줄로 */
+.has-img .thumb__label { white-space: nowrap; max-width: calc(100% - 16px); overflow: hidden; text-overflow: ellipsis; }
+/* 화이트보드 사진은 좁게 잘리면 빈 벽만 보여서 책상·종이 쪽을 보인다 */
+img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
+/* 교육자료 정렬 줄: 탭은 안에서 넘기고 건수는 같은 줄 끝에 */
+.sortrow { flex-wrap: nowrap; }
+.sortrow > .tabs { flex: 1 1 auto; min-width: 0; }
+.sortrow > .mono { flex: none; }

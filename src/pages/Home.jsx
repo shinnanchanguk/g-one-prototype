@@ -221,7 +221,7 @@ export default function Home() {
             <h2 className="home__h2">{cur ? `${cur.label} · 볼 만한 콘텐츠` : '이번 주 선생님들이 많이 본 성장 콘텐츠'}</h2>
             <Tabs size="sm" value={sort} onChange={setSort} items={['나에게 맞는 순', '인기순']} />
           </div>
-          <div className="fc-grid">{shown.map((c, i) => <ContentCard key={c.id} c={c} big={i === 0} img={imgs[i]} />)}</div>
+          <div className={`fc-grid ${shown.length === 4 ? 'fc-grid--n4' : ''}`}>{shown.map((c, i) => <ContentCard key={c.id} c={c} big={i === 0} img={imgs[i]} />)}</div>
           <div className="row-end"><Link to="/learn/trainings" className="more">연수 더 보기 <Icon name="right" size={13} /></Link><Link to="/learn/modules" className="more">배움 모듈 더 보기 <Icon name="right" size={13} /></Link><Link to="/learn/materials" className="more">교육자료 더 보기 <Icon name="right" size={13} /></Link></div>
         </section>
         <Worries />
