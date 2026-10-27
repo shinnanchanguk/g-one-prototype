@@ -228,10 +228,10 @@ export default function Home() {
       </div>
 
       <div className="home__soft">
-        <Icon name="compass" size={18} />
-        <span>나에게 맞는 길을 더 정확히 찾고 싶다면 <b>성장 설계</b>를 해 보세요. 하지 않아도 모든 콘텐츠를 볼 수 있어요.</span>
+        <span className="home__soft-ic tone-green"><Icon name="compass" size={18} /></span>
+        <span>나에게 맞는 성장 컨텐츠를 더 정확히 찾고 싶다면 <b>성장 설계</b>를 해 보세요.</span>
         <Link to="/growth/journey" className="mono home__mine">내 성장 여정 · 뱃지 {got}개 · 전문가 {expertAreas().length}개 영역</Link>
-        <Link to="/growth/design" className="btn btn--sm btn--line">3분 성장 설계</Link>
+        <Link to="/growth/design" className="btn btn--sm btn--green">3분 성장 설계</Link>
       </div>
     </div>
   );

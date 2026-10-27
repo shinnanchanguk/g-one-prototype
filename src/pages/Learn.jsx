@@ -131,7 +131,7 @@ export function Modules() {
 
   return (
     <div className="container">
-      <PageHead crumbs={['배움', '배움 모듈']} code="2.2 · 추천 모듈 · 나의 모듈 · 모듈 만들기" title="배움 모듈" desc="연수, 영상, 매뉴얼, 실천 과제를 한 주제로 묶은 나만의 배움 과정입니다. 동료가 만든 모듈을 담아 듣거나, 내게 맞게 직접 골라 만들어요.">
+      <PageHead crumbs={['배움', '배움 모듈']} code="2.2 · 추천 모듈 · 나의 모듈 · 모듈 만들기" title="배움 모듈" desc="연수, 영상, 매뉴얼, 실천 과제 등을 한 주제로 묶은 배움 모듈입니다. 다른 선생님이 만든 모듈을 담아 듣거나, 내게 맞는 배움 모듈을 직접 만들어요.">
         <button className="btn btn--dark" onClick={() => setSp({ tab: 'mine', make: '1' })}><Icon name="plus" size={16} />모듈 만들기</button>
       </PageHead>
       <Tabs value={tab} onChange={(v) => setSp(v === 'rec' ? {} : { tab: v })} className="tabs--page" items={[{ value: 'rec', label: `추천 모듈 (${all.filter((m) => !m.mine && canSee(m)).length})`, icon: 'layers' }, { value: 'mine', label: `나의 모듈 (${made.length + taken.length})`, icon: 'bookmark' }]} />

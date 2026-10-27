@@ -993,8 +993,9 @@ span.avatar.avatar { color: #fff; }
 .fc__meta { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin-top: auto; }
 .fc__meta > span { display: inline-flex; align-items: center; gap: 4px; }
 .home__side { gap: 12px; }
-.home__soft { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; padding: 14px 18px; border: 1px dashed var(--ink); border-radius: 16px; font-size: 14px; }
+.home__soft { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; padding: 14px 18px; background: #f1f7f0; border: 1px solid rgba(35, 92, 52, 0.22); border-radius: 16px; font-size: 14px; }
 .home__soft > span { flex: 1 1 360px; }
+.home__soft > .home__soft-ic { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .home__mine { text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 1180px) {
   .home__main { grid-template-columns: minmax(0, 1fr) 320px; }
