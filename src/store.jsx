@@ -33,7 +33,6 @@ const initial = () => ({
   pointLog: [],
   notifRead: false,
   profile: { ...DEFAULT_PROFILE },
-  homeVersion: 'a',
   classView: 'feed',
   quickDiag: {},
   subjectAlerts: {},
@@ -78,14 +77,13 @@ function load() {
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return base;
     // 모양이 다른 값(옛 버전·손상)은 버리고 기본값을 쓴다
     for (const [k, v] of Object.entries(parsed)) {
-      if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype' || k === 'homeVersion') continue;
       const d = base[k];
       if (d === undefined) { if (v && typeof v === 'object' && !Array.isArray(v)) base[k] = v; else if (typeof v === 'string') base[k] = v; continue; }
       if (Array.isArray(d) ? Array.isArray(v) : (typeof v === typeof d && v !== null && !Array.isArray(v))) base[k] = v;
     }
     if (typeof base.points.activity !== 'number' || typeof base.points.interaction !== 'number') base.points = initial().points;
     base.profile = cleanProfile(base.profile);
-    if (!['a', 'b'].includes(base.homeVersion)) base.homeVersion = 'a';
     if (!CLASS_VIEWS.includes(base.classView)) base.classView = 'feed';
     base.diary = base.diary.filter((d) => d && typeof d === 'object').map((d) => ({ ...d, kind: fixKind(d.kind) }));
     base.goals = base.goals.filter((g) => g && typeof g === 'object' && Array.isArray(g.tasks))

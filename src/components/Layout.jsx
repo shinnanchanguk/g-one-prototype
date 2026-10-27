@@ -149,19 +149,6 @@ export default function Layout() {
         </div>
       </header>
 
-      {loc.pathname === '/' && (
-        <div className="hero-strip">
-          <div className="hero-strip__in">
-            <p className="hero-strip__copy">함께 배우고, 함께 성장하는 <em>경기교육의 오늘</em>, <span className="nowrap">G-ONE이</span> 함께합니다.</p>
-            <form className="hero-strip__search" onSubmit={submit}>
-              <Icon name="search" size={18} />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="수업자료, 연수, 공동체를 검색해 보세요" aria-label="통합 검색" />
-              <button className="btn btn--dark btn--sm" type="submit">검색</button>
-            </form>
-          </div>
-        </div>
-      )}
-
       <main className="main"><Outlet /></main>
 
       <footer className="foot">

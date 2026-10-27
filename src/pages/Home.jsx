@@ -1,14 +1,12 @@
+// 첫 화면: 성장 콘텐츠와 고민 나눔을 한눈에(TF 확정안, 개선 제안서 제안 1 시안 응용)
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { AreaLadder, MaterialCard, ModuleCard, TrainingCard, trainingState } from '../components/cards.jsx';
+import { Link, useNavigate } from 'react-router-dom';
+import { DELIVERY_LABEL, trainingState } from '../components/cards.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Panel, Tabs, num, shortDate } from '../components/ui.jsx';
-import { AREA_QUESTIONS, AREAS, BADGE_STAGES, BADGES, MATERIALS, ME, MODULES, SCALE, TODAY, TRAININGS, WORRIES, WORRY_TAGS, badgeOf, expertAreas } from '../data/seed.js';
+import { AREA_QUESTIONS, AREAS, BADGES, MATERIALS, ME, MODULES, SCALE, TODAY, TRAININGS, WORRIES, expertAreas } from '../data/seed.js';
 import { sortByProfile } from '../fit.js';
 import { uid, useStore } from '../store.jsx';
-
-// 첫 화면에 들어와 있는 동안 새 글이 올라오는 것처럼 보여 준다(live 표시 글은 잠시 뒤에 나타남).
-const doneOf = (a) => BADGE_STAGES.filter((sg) => badgeOf(a.key, sg.key)?.got).length;
 
 function HomeWorry({ w, fresh }) {
   const st = useStore();
@@ -77,68 +75,6 @@ function AskForm() {
   );
 }
 
-function Portfolio() {
-  const st = useStore();
-  const got = BADGES.filter((b) => b.got).length;
-  const experts = expertAreas();
-  const next = [...AREAS].filter((a) => doneOf(a) < 3).sort((a, b) => doneOf(b) - doneOf(a))[0];
-  return (
-    <Panel className="hp" tone="green" icon="award" title="나의 포트폴리오" code="성장 · 1.2" more="/growth/journey">
-      <div className="pf__me">
-        <Avatar name={ME.name} size={52} />
-        <div><strong>{ME.name} 선생님</strong><span>{ME.school} · {ME.role}</span></div>
-      </div>
-      <div className="pf__nums">
-        <div><b>{num(st.totalPoints)}P</b><span>누적 포인트</span></div>
-        <div><b>{got}개</b><span>받은 뱃지</span></div>
-        <div><b>{experts.length}개</b><span>전문가 영역</span></div>
-      </div>
-      {experts.map((a) => <p key={a.key} className="pf__expert"><Icon name="shield" size={15} />{a.name} 전문가</p>)}
-      <p className="mono">전문가까지 가장 가까운 영역</p>
-      <AreaLadder area={next} compact />
-      <Link to="/growth/journey" className="btn btn--green btn--block btn--sm">내 성장 여정 자세히 <Icon name="arrow" size={15} /></Link>
-    </Panel>
-  );
-}
-
-function HomeA() {
-  const st = useStore();
-  const { s } = st;
-  const live = useLive();
-  const [seen, setSeen] = useState(false);
-  const [msort, setMsort] = useState('나에게 맞는 순');
-  const [wtag, setWtag] = useState(null);
-  const shown = (x) => !x.live || (live && seen);
-  const freshW = WORRIES.filter((w) => w.live && shown(w));
-  const freshM = MATERIALS.filter((m) => m.live && shown(m));
-  const worries = [...freshW, ...s.myWorries, ...WORRIES.filter((w) => !w.live)].filter((w) => !wtag || w.tag === wtag).slice(0, 3);
-  const allMats = [...s.myMaterials, ...MATERIALS.filter((m) => !m.live)];
-  const sorted = msort === '최신 등록순' ? [...allMats].sort((a, b) => b.date.localeCompare(a.date)) : msort === '좋아요 순' ? [...allMats].sort((a, b) => b.likes - a.likes) : sortByProfile([...allMats].sort((a, b) => b.likes - a.likes), s.profile);
-  const mats = [...freshM, ...sorted].slice(0, 3);
-  return (
-    <div className="home__grid home__grid--a">
-      <Portfolio />
-      <Panel className="hp" tone="purple" icon="message" title="고민 남기기" code="동행 · 4.1" more="/together/worries">
-        <AskForm />
-        <div className="chips chips--scroll">
-          {WORRY_TAGS.slice(0, 5).map((t) => <button key={t} className={`chip chip--btn ${wtag === t ? 'is-on' : ''}`} onClick={() => setWtag(wtag === t ? null : t)}>#{t}</button>)}
-        </div>
-        {live && !seen && <button className="newpill" onClick={() => setSeen(true)}><Icon name="refresh" size={14} />새 고민 1개 · 새 자료 1개가 올라왔어요</button>}
-        <div className="hworries">{worries.map((w) => <HomeWorry key={w.id} w={w} fresh={!!w.live} />)}</div>
-      </Panel>
-      <Panel className="hp" tone="blue" icon="layers" title="교육자료 추천" code="배움 · 2.3" more="/learn/materials">
-        <Tabs size="sm" value={msort} onChange={setMsort} items={['나에게 맞는 순', '좋아요 순', '최신 등록순']} />
-        <div className="mlist">{mats.map((m) => <MaterialCard key={m.id} m={m} compact />)}</div>
-      </Panel>
-    </div>
-  );
-}
-
-const GROWTH_CATS = [
-  ['수업·평가', '수업', 'teach'], ['생활교육', '생활지도', 'life'], ['디지털·AI', 'AI 디지털 도구', 'change'],
-  ['정신건강·자기돌봄', '마음 돌보기', 'self'], ['업무 역량', '업무 효율화', 'pro'], ['진로교육', '진로', 'career'], ['교육과정', '교육과정', 'curr'],
-];
-
 function QuickDiag({ areaKey }) {
   const st = useStore();
   const area = AREAS.find((a) => a.key === areaKey);
@@ -166,65 +102,132 @@ function QuickDiag({ areaKey }) {
   );
 }
 
-function HomeB() {
+
+// 고민별 입구. 녹음의 "수업, 생활지도, AI 디지털 도구, 마음 돌보기, 업무 효율화"
+const LANES = [
+  { key: 'teach', label: '수업이 고민일 때', icon: 'target', tone: 'blue', cats: ['수업·평가', '교육과정'] },
+  { key: 'life', label: '생활지도·학부모', icon: 'heart', tone: 'pink', cats: ['생활교육', '학급경영'] },
+  { key: 'change', label: 'AI·디지털 도구', icon: 'spark', tone: 'purple', cats: ['디지털·AI'] },
+  { key: 'self', label: '지친 마음 돌보기', icon: 'leaf', tone: 'green', cats: ['정신건강·자기돌봄'] },
+  { key: 'pro', label: '업무 빨리 끝내기', icon: 'clock', tone: 'orange', cats: ['업무 역량'] },
+];
+const CAT_THUMB = { '수업·평가': 0, 교육과정: 1, 생활교육: 2, 학급경영: 2, '디지털·AI': 3, '정신건강·자기돌봄': 1, '업무 역량': 4, 진로교육: 4 };
+const matCat = (m) => (m.type === '생활교육' ? '생활교육' : /AI|디지털/.test(m.title) ? '디지털·AI' : m.type === '진로자료' ? '진로교육' : '수업·평가');
+
+// 연수·배움 모듈·교육자료를 '성장 콘텐츠' 한 줄로 모은다. 카드를 누르면 원래 화면으로 간다.
+function useContents() {
+  const { s } = useStore();
+  const p = s.profile;
+  const canSee = (m) => m.mine || m.share === '전체' || (m.share === '우리 학교' && m.school === p.school);
+  return [
+    ...[...s.myModules, ...MODULES].filter(canSee).map((m) => ({ id: `m-${m.id}`, kind: '모듈', icon: 'layers', title: m.title, who: m.author, where: m.school, meta: `${m.weeks}주 과정`, likes: m.likes, users: m.learners, cat: m.cat, level: m.level ?? '전체', subject: m.subject, to: '/learn/modules', share: m.share })),
+    ...TRAININGS.filter((t) => trainingState(t, s) !== 'closed').map((t) => ({ id: `t-${t.id}`, kind: '연수', icon: 'school', title: t.title, who: t.host, where: `${t.type === '직무' ? '직무연수' : '자율연수'} · 인정 ${t.hours}시간`, meta: DELIVERY_LABEL[t.delivery], likes: t.reviews, users: t.applied, cat: t.cat, level: t.level, subject: t.subject, to: `/learn/trainings?q=${encodeURIComponent(t.title)}` })),
+    ...[...s.myMaterials, ...MATERIALS].filter((m) => !m.live).map((m) => ({ id: `a-${m.id}`, kind: '자료', icon: 'file', title: m.title, who: m.author, where: m.school, meta: m.type, likes: m.likes, users: m.downloads, cat: matCat(m), level: m.level, subject: m.subject, to: `/learn/materials/${m.id}` })),
+  ];
+}
+
+function ContentCard({ c, big }) {
+  return (
+    <Link to={c.to} className={`fc ${big ? 'fc--big' : ''}`}>
+      <div className={`fc__thumb thumb--${CAT_THUMB[c.cat] ?? 0}`}>
+        <Icon name={c.icon} size={big ? 40 : 28} />
+        <span className="fc__kind">{c.kind}</span>
+      </div>
+      <div className="fc__body">
+        <div className="chips"><Chip tone={c.kind === '연수' ? 'blue' : c.kind === '자료' ? 'purple' : 'green'}>{c.kind}</Chip><Chip>{c.cat}</Chip>{c.share === '우리 학교' && <Chip tone="orange" solid>우리 학교</Chip>}</div>
+        <b className="fc__title">{c.title}</b>
+        <span className="fc__who"><Avatar name={c.who} size={22} /> {c.who} · {c.where}</span>
+        <span className="fc__meta mono"><Icon name="heart" size={13} /> {num(c.likes)} <Icon name="users" size={13} /> {num(c.users)} <Icon name="clock" size={13} /> {c.meta}</span>
+      </div>
+    </Link>
+  );
+}
+
+function Worries() {
   const st = useStore();
   const { s } = st;
-  const p = s.profile;
-  const [cat, setCat] = useState(GROWTH_CATS[0][0]);
-  const [wsort, setWsort] = useState('공감 많은 순');
-  const areaKey = GROWTH_CATS.find((c) => c[0] === cat)[2];
-  const trainings = sortByProfile(TRAININGS.filter((t) => t.cat === cat && trainingState(t, s) !== 'closed'), p).slice(0, 2);
-  const canSee = (m) => m.mine || m.share === '전체' || (m.share === '우리 학교' && m.school === p.school);
-  const mods = sortByProfile([...s.myModules, ...MODULES].filter((m) => m.cat === cat && canSee(m)), p).slice(0, 1);
-  const allW = [...s.myWorries, ...WORRIES];
-  const worries = (wsort === '공감 많은 순' ? [...allW].sort((a, b) => b.likes - a.likes) : allW).slice(0, 4);
+  const live = useLive();
+  const [seen, setSeen] = useState(false);
+  const [sort, setSort] = useState('공감 많은 순');
+  const fresh = WORRIES.filter((w) => w.live && live && seen);
+  const rest = [...s.myWorries, ...WORRIES.filter((w) => !w.live)];
+  const list = [...fresh, ...(sort === '공감 많은 순' ? [...rest].sort((a, b) => b.likes - a.likes) : rest)].slice(0, 4);
   return (
-    <div className="homeb">
-      <section className="homeb__main">
-        <div className="homeb__head">
-          <div><span className="mono c-blue">배움 · 오늘 선생님께 필요한 성장 콘텐츠</span><h2>무엇을 키워 볼까요?</h2></div>
-          <span className="mono">{p.band}{p.subject ? ` · ${p.subject}` : ''} 선생님께 맞는 것부터</span>
-        </div>
-        <div className="gcats" role="tablist" aria-label="성장 분야">
-          {GROWTH_CATS.map(([c, label]) => (
-            <button key={c} role="tab" aria-selected={cat === c} className={`gcat ${cat === c ? 'is-on' : ''}`} onClick={() => setCat(c)}>
-              <Icon name={{ '수업·평가': 'target', 생활교육: 'heart', '디지털·AI': 'spark', '정신건강·자기돌봄': 'leaf', '업무 역량': 'file', 진로교육: 'compass', 교육과정: 'layers' }[c]} size={18} />
-              {label}
-              <span className="mono">{TRAININGS.filter((t) => t.cat === c).length + MODULES.filter((m) => m.cat === c).length}</span>
-            </button>
-          ))}
-        </div>
-        <QuickDiag areaKey={areaKey} />
-        <div className="tcards">{trainings.map((t) => <TrainingCard key={t.id} t={t} compact />)}</div>
-        {mods.map((m) => <ModuleCard key={m.id} m={m} />)}
-        <div className="row-end"><Link to="/learn/trainings" className="more">연수 더 보기 <Icon name="right" size={13} /></Link><Link to="/learn/modules" className="more">배움 모듈 더 보기 <Icon name="right" size={13} /></Link></div>
-      </section>
-      <Panel className="hp homeb__side" tone="purple" icon="message" title="공감 많은 고민" code="동행 · 4.1" more="/together/worries">
-        <AskForm />
-        <Tabs size="sm" value={wsort} onChange={setWsort} items={['공감 많은 순', '최신순']} />
-        <div className="hworries">{worries.map((w) => <HomeWorry key={w.id} w={w} />)}</div>
-      </Panel>
-    </div>
+    <Panel className="home__side" tone="purple" icon="message" title="고민 나눔" code="동행 · 4.1" more="/together/worries">
+      <AskForm />
+      <div className="row-between">
+        <Tabs size="sm" value={sort} onChange={setSort} items={['공감 많은 순', '최신순']} />
+        {live && !seen && <button className="newpill" onClick={() => { setSeen(true); setSort('최신순'); }}><Icon name="refresh" size={14} />새 고민 1개</button>}
+      </div>
+      <div className="hworries">{list.map((w) => <HomeWorry key={w.id} w={w} fresh={!!w.live} />)}</div>
+    </Panel>
   );
 }
 
 export default function Home() {
   const st = useStore();
-  const [sp, setSp] = useSearchParams();
-  const q = sp.get('home');
-  const v = q === 'a' || q === 'b' ? q : st.s.homeVersion;
-  const pick = (x) => { st.patch(() => ({ homeVersion: x })); setSp({ home: x }, { replace: true }); };
+  const p = st.s.profile;
+  const nav = useNavigate();
+  const [q, setQ] = useState('');
+  const [lane, setLane] = useState(null);
+  const [sort, setSort] = useState('나에게 맞는 순');
+  const all = useContents();
+  const cur = LANES.find((l) => l.key === lane);
+  const pool = all.filter((c) => !cur || cur.cats.includes(c.cat));
+  const popular = [...pool].sort((a, b) => (b.likes + b.users / 10) - (a.likes + a.users / 10));
+  const ranked = sort === '나에게 맞는 순' ? sortByProfile(popular, p) : popular;
+  // 모듈·연수·자료가 골고루 보이게 종류별로 번갈아 고른다(원격 연수의 큰 신청자 수가 위를 다 차지하지 않게)
+  const byKind = ['모듈', '연수', '자료'].map((k) => ranked.filter((c) => c.kind === k));
+  const shown = [];
+  for (let i = 0; shown.length < 5 && i < ranked.length; i += 1) byKind.forEach((list) => { if (list[i] && shown.length < 5) shown.push(list[i]); });
+  const got = BADGES.filter((b) => b.got).length;
+  const search = (e) => { e.preventDefault(); if (q.trim()) nav(`/search?q=${encodeURIComponent(q.trim())}`); };
   return (
     <div className="container home">
-      <div className="variantbar">
-        <span className="variantbar__k"><Icon name="layers" size={15} />첫 화면 시안</span>
-        <div className="seg" role="tablist" aria-label="첫 화면 시안">
-          <button role="tab" aria-selected={v === 'a'} className={v === 'a' ? 'is-on' : ''} onClick={() => pick('a')}>A 간결형</button>
-          <button role="tab" aria-selected={v === 'b'} className={v === 'b' ? 'is-on' : ''} onClick={() => pick('b')}>B 배움+고민형</button>
+      <section className="home__hero">
+        <div>
+          <span className="mono c-orange">{p.band}{p.subject ? ` · ${p.subject}` : ''} 선생님께 맞춘 성장 콘텐츠</span>
+          <h1>오늘은 무엇을 둘러볼까요?</h1>
+          <p>설문 없이 바로 보세요. 마음에 드는 것을 누르면 그때 필요한 것만 여쭤볼게요.</p>
         </div>
-        <span className="variantbar__note">{v === 'a' ? '자주 바뀌는 포트폴리오 · 고민 · 교육자료 세 칸만 앞에 둔 안' : '분야를 고르면 맞춤 배움과 한 문항 진단이 나오고, 옆에 공감 많은 고민이 보이는 안'}</span>
+        <form className="home__search" onSubmit={search} role="search">
+          <Icon name="search" size={18} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="고민이나 주제로 찾기 (예: 질문 수업, 학부모 상담, 쉼)" aria-label="고민이나 주제로 찾기" />
+          <button className="btn btn--dark btn--sm" type="submit">찾기</button>
+        </form>
+      </section>
+
+      <div className="home__main">
+        <section className="home__contents">
+          <div className="lanes" role="tablist" aria-label="고민별 입구">
+            {LANES.map((l) => {
+              const n = all.filter((c) => l.cats.includes(c.cat)).length;
+              return (
+                <button key={l.key} role="tab" aria-selected={lane === l.key} className={`lane ${lane === l.key ? 'is-on' : ''}`} onClick={() => setLane(lane === l.key ? null : l.key)}>
+                  <span className={`lane__icon tone-${l.tone}`}><Icon name={l.icon} size={18} /></span>
+                  <b>{l.label}</b>
+                  <span className="mono">{n}개 콘텐츠</span>
+                </button>
+              );
+            })}
+          </div>
+          {cur && <QuickDiag areaKey={cur.key} />}
+          <div className="row-between">
+            <h2 className="home__h2">{cur ? `${cur.label} · 볼 만한 콘텐츠` : '이번 주 선생님들이 많이 본 성장 콘텐츠'}</h2>
+            <Tabs size="sm" value={sort} onChange={setSort} items={['나에게 맞는 순', '인기순']} />
+          </div>
+          <div className="fc-grid">{shown.map((c, i) => <ContentCard key={c.id} c={c} big={i === 0} />)}</div>
+          <div className="row-end"><Link to="/learn/trainings" className="more">연수 더 보기 <Icon name="right" size={13} /></Link><Link to="/learn/modules" className="more">배움 모듈 더 보기 <Icon name="right" size={13} /></Link><Link to="/learn/materials" className="more">교육자료 더 보기 <Icon name="right" size={13} /></Link></div>
+        </section>
+        <Worries />
       </div>
-      {v === 'a' ? <HomeA /> : <HomeB />}
+
+      <div className="home__soft">
+        <Icon name="compass" size={18} />
+        <span>나에게 맞는 길을 더 정확히 찾고 싶다면 <b>성장 설계</b>를 해 보세요. 하지 않아도 모든 콘텐츠를 볼 수 있어요.</span>
+        <Link to="/growth/journey" className="mono home__mine">내 성장 여정 · 뱃지 {got}개 · 전문가 {expertAreas().length}개 영역</Link>
+        <Link to="/growth/design" className="btn btn--sm btn--line">3분 성장 설계</Link>
+      </div>
     </div>
   );
 }
