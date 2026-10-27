@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { DIAG_HISTORY, DIARY, GOALS, MENTORINGS, POINT_LOG, TODAY } from './data/seed.js';
+import { CITIES } from './data/gyeonggiMap.js';
+import { AREAS, BANDS, DIAG_HISTORY, DIARY, GOALS, MENTORINGS, POINT_LOG, SCALE, SUBJECTS, TODAY, bandOf } from './data/seed.js';
 import { DEFAULT_PROFILE, cleanProfile } from './fit.js';
 
 // 화면에서 한 모든 일은 이 브라우저(localStorage)에만 남는다.
@@ -41,6 +42,32 @@ const initial = () => ({
 // 단계는 배움·나눔·동행 세 가지로 통일했다. 예전 기록의 실천·성찰은 가까운 단계로 옮긴다.
 const STAGE_FIX = { 실천: '배움', 성찰: '나눔' };
 const fixKind = (k) => STAGE_FIX[k] ?? (['배움', '나눔', '동행'].includes(k) ? k : '배움');
+export const CLASS_VIEWS = ['feed', 'subject', 'week', 'map', 'cal'];
+const SCOPES = ['학교', '지원청', '도'];
+const CITY_OK = new Set(CITIES.map((c) => c.name));
+const str = (v, n) => String(v ?? '').slice(0, n);
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+// 예전 판의 진단 영역 키를 기존 역량진단 10개 영역 키로 옮긴다
+const AREA_FIX = { assess: 'teach', digital: 'change', class: 'mgmt', comm: 'collab', care: 'self' };
+const areaKey = (k) => { const x = AREA_FIX[k] ?? k; return AREAS.some((a) => a.key === x) ? x : 'teach'; };
+const fixScores = (sc) => Object.fromEntries(Object.entries(sc && typeof sc === 'object' ? sc : {}).map(([k, v]) => [AREA_FIX[k] ?? k, Number(v) || 0]).filter(([k]) => AREAS.some((a) => a.key === k)));
+
+// 예전 판에서 저장한 공개수업(참관 대상·지도안 없음)도 새 화면이 그릴 수 있게 모양을 맞춘다
+function fixClass(o) {
+  const b = bandOf(o.level);
+  const audience = Array.isArray(o.audience) && o.audience.length && o.audience.every((x) => BANDS.includes(x)) ? o.audience : (BANDS.includes(b) ? [b] : [...BANDS]);
+  const plan = o.plan && typeof o.plan === 'object' && Array.isArray(o.plan.flow)
+    ? { file: str(o.plan.file, 80), goal: str(o.plan.goal, 200), flow: o.plan.flow.map((x) => str(x, 120)).slice(0, 6) }
+    : { file: '', goal: str(o.topic, 200), flow: [`전개 · ${str(o.topic, 120)}`] };
+  return {
+    ...o, audience, plan,
+    topic: str(o.topic, 80), subject: str(o.subject, 20), grade: str(o.grade, 20),
+    scope: SCOPES.includes(o.scope) ? o.scope : '지원청',
+    city: CITY_OK.has(o.city) ? o.city : '수원시',
+    cap: Number.isFinite(Number(o.cap)) ? Number(o.cap) : 10,
+    applied: Number.isFinite(o.applied) ? o.applied : 0,
+  };
+}
 
 function load() {
   try {
@@ -51,6 +78,7 @@ function load() {
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return base;
     // 모양이 다른 값(옛 버전·손상)은 버리고 기본값을 쓴다
     for (const [k, v] of Object.entries(parsed)) {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
       const d = base[k];
       if (d === undefined) { if (v && typeof v === 'object' && !Array.isArray(v)) base[k] = v; else if (typeof v === 'string') base[k] = v; continue; }
       if (Array.isArray(d) ? Array.isArray(v) : (typeof v === typeof d && v !== null && !Array.isArray(v))) base[k] = v;
@@ -58,9 +86,14 @@ function load() {
     if (typeof base.points.activity !== 'number' || typeof base.points.interaction !== 'number') base.points = initial().points;
     base.profile = cleanProfile(base.profile);
     if (!['a', 'b'].includes(base.homeVersion)) base.homeVersion = 'a';
-    if (typeof base.classView !== 'string') base.classView = 'feed';
+    if (!CLASS_VIEWS.includes(base.classView)) base.classView = 'feed';
     base.diary = base.diary.filter((d) => d && typeof d === 'object').map((d) => ({ ...d, kind: fixKind(d.kind) }));
-    base.goals = base.goals.filter((g) => g && Array.isArray(g.tasks)).map((g) => ({ ...g, tasks: g.tasks.map((t) => ({ ...t, kind: fixKind(t.kind) })) }));
+    base.goals = base.goals.filter((g) => g && typeof g === 'object' && Array.isArray(g.tasks))
+      .map((g) => ({ ...g, id: str(g.id, 40), title: str(g.title, 120), area: areaKey(g.area), created: DATE.test(g.created) ? g.created : TODAY, tasks: g.tasks.filter((t) => t && typeof t === 'object').map((t) => ({ ...t, t: str(t.t, 120), kind: fixKind(t.kind) })) }));
+    base.diagnoses = base.diagnoses.filter((d) => d && typeof d === 'object' && DATE.test(d.date)).map((d) => ({ ...d, label: str(d.label, 40), scores: fixScores(d.scores) }));
+    base.myClasses = base.myClasses.filter((o) => o && typeof o === 'object' && typeof o.id === 'string' && DATE.test(o.date) && typeof o.time === 'string').map(fixClass);
+    base.quickDiag = Object.fromEntries(Object.entries(base.quickDiag).filter(([k, v]) => AREAS.some((a) => a.key === k) && Number.isInteger(v) && v >= 1 && v <= SCALE.length));
+    base.subjectAlerts = Object.fromEntries(Object.entries(base.subjectAlerts).filter(([k, v]) => SUBJECTS.includes(k) && typeof v === 'string'));
     return base;
   } catch {
     return initial();

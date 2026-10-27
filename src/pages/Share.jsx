@@ -181,7 +181,7 @@ export function OpenClasses() {
   const st = useStore();
   const p = st.s.profile;
   const [sp, setSp] = useSearchParams();
-  const view = VIEWS.some((x) => x.v === sp.get('v')) ? sp.get('v') : st.s.classView;
+  const view = [sp.get('v'), st.s.classView].find((x) => VIEWS.some((y) => y.v === x)) ?? 'feed';
   const setView = (v) => { st.patch(() => ({ classView: v })); setSp({ v }, { replace: true }); };
   const [tab, setTab] = useState('explore');
   const [scope, setScope] = useState('전체');
@@ -222,10 +222,11 @@ export function OpenClasses() {
 
   const submit = (e) => {
     e.preventDefault();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date)) { st.toast('공개 날짜를 골라 주세요', 'warn'); return; }
     if (!f.subject || !f.topic.trim()) { st.toast('교과와 수업 주제를 적어 주세요', 'warn'); return; }
     if (!f.file && !f.goal.trim()) { st.toast('지도안 파일을 올리거나 학습 목표를 적어 주세요', 'warn'); return; }
     if (!f.audience.length) { st.toast('참관 대상 학교급을 하나 이상 골라 주세요', 'warn'); return; }
-    const flow = f.flow.split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 6);
+    const flow = f.flow.split('\n').map((x) => x.trim().slice(0, 120)).filter(Boolean).slice(0, 6);
     const o = {
       id: uid('o'), date: f.date, time: f.time, city: p.city, school: ME.school, level: { 유치원: '유치원', 초등: '초등학교', 중등: '중학교', 특수: '특수학교' }[p.band], grade: f.grade || '학급 미정', subject: f.subject, topic: f.topic.trim(), teacher: ME.name,
       scope: f.scope, cap: Math.max(1, Math.min(60, Number(f.cap) || 1)), applied: 0, mode: '대면', office: p.office, audience: f.audience, mine: true,
@@ -302,14 +303,14 @@ export function OpenClasses() {
               <span className="field__hint">{SCOPE_HELP[f.scope]}</span>
             </div>
             <div className="row2">
-              <Field label="날짜"><input className="input" type="date" value={f.date} min={TODAY} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
-              <Field label="시간"><input className="input" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
+              <Field label="날짜"><input className="input" type="date" required value={f.date} min={TODAY} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
+              <Field label="시간"><input className="input" maxLength={20} value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
             </div>
             <div className="row2">
               <Field label="교과"><select className="input" value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })}>{SUBJECTS.map((x) => <option key={x}>{x}</option>)}</select></Field>
-              <Field label="학년·반"><input className="input" value={f.grade} onChange={(e) => setF({ ...f, grade: e.target.value })} placeholder="6학년 3반" /></Field>
+              <Field label="학년·반"><input className="input" maxLength={20} value={f.grade} onChange={(e) => setF({ ...f, grade: e.target.value })} placeholder="6학년 3반" /></Field>
             </div>
-            <Field label="수업 주제"><input className="input" value={f.topic} onChange={(e) => setF({ ...f, topic: e.target.value })} placeholder="예) 비례식을 생활 문제로 풀기" /></Field>
+            <Field label="수업 주제"><input className="input" maxLength={80} value={f.topic} onChange={(e) => setF({ ...f, topic: e.target.value })} placeholder="예) 비례식을 생활 문제로 풀기" /></Field>
             <div className="field">
               <span className="field__label">참관 대상 학교급</span>
               <div className="chips">{BANDS.map((b) => { const on = f.audience.includes(b); return <button type="button" key={b} className={`chip chip--btn ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => setF({ ...f, audience: on ? f.audience.filter((x) => x !== b) : [...f.audience, b] })}>{b}</button>; })}</div>
@@ -319,8 +320,8 @@ export function OpenClasses() {
           </Panel>
           <Panel title="지도안" code="신청 전에 미리 보여요" desc="파일을 올리거나 학습 목표와 수업 흐름을 적어 주세요.">
             <Field label="지도안 파일" hint="프로토타입이라 파일 이름만 기록하고 실제로 올리지는 않아요."><input className="input" type="file" accept=".hwp,.hwpx,.pdf,.docx" onChange={(e) => setF({ ...f, file: (e.target.files?.[0]?.name ?? '').slice(0, 80) })} /></Field>
-            <Field label="학습 목표"><input className="input" value={f.goal} onChange={(e) => setF({ ...f, goal: e.target.value })} placeholder="예) 비례식을 세워 생활 속 문제를 푼다." /></Field>
-            <Field label="수업 흐름" hint="한 줄에 한 단계씩 적어 주세요."><textarea className="ta" rows={4} value={f.flow} onChange={(e) => setF({ ...f, flow: e.target.value })} placeholder={'도입 · 장보기 영수증으로 질문 만들기\n전개 · 모둠별 비례식 세우기\n정리 · 다른 모둠 풀이 비교'} /></Field>
+            <Field label="학습 목표"><input className="input" maxLength={200} value={f.goal} onChange={(e) => setF({ ...f, goal: e.target.value })} placeholder="예) 비례식을 세워 생활 속 문제를 푼다." /></Field>
+            <Field label="수업 흐름" hint="한 줄에 한 단계씩 적어 주세요."><textarea className="ta" rows={4} maxLength={800} value={f.flow} onChange={(e) => setF({ ...f, flow: e.target.value })} placeholder={'도입 · 장보기 영수증으로 질문 만들기\n전개 · 모둠별 비례식 세우기\n정리 · 다른 모둠 풀이 비교'} /></Field>
             <button className="btn btn--dark" type="submit"><Icon name="video" size={16} />공개수업 등록</button>
             <ul className="flow flow--light">
               <li><span className="mono">01</span>고른 범위의 선생님에게 바로 보여요</li>
