@@ -6,6 +6,7 @@ import { MENU } from '../components/Layout.jsx';
 import { Chip, Empty, PageHead, Panel, SearchBox, fmtDate } from '../components/ui.jsx';
 import { COMMUNITIES, FAQ, MATERIALS, MENTORS, MODULES, NOTICES, OPEN_CLASSES, OUTCOMES, TRAININGS, WORRIES } from '../data/seed.js';
 import { classAccess } from '../fit.js';
+import { matCat, thumbsFor } from '../thumbs.js';
 import { useStore } from '../store.jsx';
 
 const DIRECTIONS = [
@@ -119,6 +120,8 @@ export function Search() {
     outcomes: OUTCOMES.filter((x) => has(x.title + x.summary)),
   };
   const total = Object.values(r).reduce((a, x) => a + x.length, 0);
+  const trainImgs = thumbsFor(r.trainings, (t) => t.cat);
+  const matImgs = thumbsFor(r.materials, matCat, 3);
   return (
     <div className="container">
       <PageHead title="통합 검색" desc="연수, 배움 모듈, 교육자료, 공동체, 공개수업, 고민, 멘토, 성과를 한 번에 찾아요." />
@@ -126,9 +129,9 @@ export function Search() {
       {!q && <div className="chips mt">{['AI', '질문', '평가', '마음', '수학', '생활교육'].map((k) => <button key={k} className="chip chip--btn" onClick={() => setSp({ q: k })}>#{k}</button>)}</div>}
       {q && <p className="mono mt">「{q}」 검색 결과 {total}건</p>}
       {q && !total && <Empty text="검색 결과가 없어요" />}
-      {r.trainings.length > 0 && <Panel title="연수" code={`${r.trainings.length}`}><div className="tcards">{r.trainings.map((x) => <TrainingCard key={x.id} t={x} />)}</div></Panel>}
+      {r.trainings.length > 0 && <Panel title="연수" code={`${r.trainings.length}`}><div className="tcards">{r.trainings.map((x, i) => <TrainingCard key={x.id} t={x} thumb={trainImgs[i]} />)}</div></Panel>}
       {r.modules.length > 0 && <Panel title="배움 모듈" code={`${r.modules.length}`}><div className="modgrid">{r.modules.map((x) => <ModuleCard key={x.id} m={x} />)}</div></Panel>}
-      {r.materials.length > 0 && <Panel title="교육자료" code={`${r.materials.length}`}><div className="mgrid">{r.materials.map((x) => <MaterialCard key={x.id} m={x} />)}</div></Panel>}
+      {r.materials.length > 0 && <Panel title="교육자료" code={`${r.materials.length}`}><div className="mgrid">{r.materials.map((x, i) => <MaterialCard key={x.id} m={x} thumb={matImgs[i]} />)}</div></Panel>}
       {r.comms.length > 0 && <Panel title="공동체" code={`${r.comms.length}`}><div className="cgrid">{r.comms.map((x) => <CommunityCard key={x.id} c={x} />)}</div></Panel>}
       {r.classes.length > 0 && <Panel title="공개수업" code={`${r.classes.length}`}><div className="oclist">{r.classes.map((x) => <OpenClassCard key={x.id} o={x} onOpen={setO} />)}</div></Panel>}
       {r.worries.length > 0 && <Panel title="고민" code={`${r.worries.length}`}><ul className="olist">{r.worries.map((x) => <li key={x.id}><Link to={`/together/worries/${x.id}`}><span className="dot bg-green" /><span><b>{x.title}</b><small>#{x.tag}</small></span></Link></li>)}</ul></Panel>}

@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Empty, Field, Modal, PageHead, Panel, Progress, SearchBox, Select, Tabs, fmtDate, num } from '../components/ui.jsx';
 import { LEVELS, MATERIALS, ME, MODULES, OUTCOMES, ROOMS, TODAY, TRAININGS } from '../data/seed.js';
 import { fitsBand, sortByProfile } from '../fit.js';
+import { matCat, thumbsFor } from '../thumbs.js';
 import { uid, useStore } from '../store.jsx';
 
 const CATS = ['전체', '수업·평가', '디지털·AI', '생활교육', '학급경영', '진로교육', '교육과정', '업무 역량', '정신건강·자기돌봄'];
@@ -52,6 +53,7 @@ export function Trainings() {
 
   if (['module', 'make'].includes(sp.get('tab'))) return <Navigate to={sp.get('tab') === 'make' ? '/learn/modules?tab=mine&make=1' : '/learn/modules'} replace />;
 
+  const trainImgs = thumbsFor(list, (t) => t.cat);
   return (
     <div className="container">
       <PageHead crumbs={['배움', '연수']} code="2.1 · 직무연수 · 자율연수 · 교육청/지원청 연수 신청" title="연수" desc="경기도교육청, 교육지원청, 교육연수원의 직무연수와 연구회 자율연수를 대면·원격 구분 없이 한곳에서 찾고 신청합니다.">
@@ -74,7 +76,7 @@ export function Trainings() {
           </div>
         </div>
         <div className="tcards">
-          {list.map((t) => <TrainingCard key={t.id} t={t} />)}
+          {list.map((t, i) => <TrainingCard key={t.id} t={t} thumb={trainImgs[i]} />)}
           {!list.length && <Empty text="조건에 맞는 연수가 없어요. 조건을 줄여 보세요." />}
         </div>
       </Panel>
@@ -226,6 +228,7 @@ export function Materials() {
     setSort('최신 등록순');
   };
 
+  const matImgs = thumbsFor(list, matCat, 3);
   return (
     <div className="container">
       <PageHead crumbs={['배움', '교육자료']} code="2.3 · 교육자료 추천 · 교육자료 업로드" title="교육자료" desc="선생님들이 만든 장학자료와 교육자료를 찾고 올립니다. 좋아요와 활용 평가는 성장 포인트와 분야별 전문가 인증에 반영돼요.">
@@ -236,8 +239,8 @@ export function Materials() {
         <Select label="유형" value={type} onChange={setType} options={['전체 유형', '수업자료', '학습지도안', '장학자료', '평가자료', '생활교육', '진로자료']} />
         <Select label="학교급" value={level} onChange={setLevel} options={['전체 학교급', ...LEVELS]} />
       </div>
-      <div className="row-between"><Tabs size="sm" value={sort} onChange={setSort} items={['나에게 맞는 순', '좋아요 순', '최신 등록순', '다운로드 순']} /><span className="mono">{list.length}건</span></div>
-      <div className="mgrid">{list.map((m) => <MaterialCard key={m.id} m={m} />)}</div>
+      <div className="row-between"><Tabs size="sm" className="tabs--scroll" value={sort} onChange={setSort} items={['나에게 맞는 순', '좋아요 순', '최신 등록순', '다운로드 순']} /><span className="mono">{list.length}건</span></div>
+      <div className="mgrid">{list.map((m, i) => <MaterialCard key={m.id} m={m} thumb={matImgs[i]} />)}</div>
       {!list.length && <Empty text="조건에 맞는 자료가 없어요" />}
 
       <Modal open={up} onClose={() => setUp(false)} title="교육자료 올리기" footer={<button className="btn btn--dark" onClick={upload}><Icon name="upload" size={15} />올리기</button>}>

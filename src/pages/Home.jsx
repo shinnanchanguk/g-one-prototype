@@ -6,6 +6,7 @@ import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Panel, Tabs, num, shortDate } from '../components/ui.jsx';
 import { AREA_QUESTIONS, AREAS, BADGES, MATERIALS, ME, MODULES, SCALE, TODAY, TRAININGS, WORRIES, expertAreas } from '../data/seed.js';
 import { sortByProfile } from '../fit.js';
+import { matCat, thumbsFor } from '../thumbs.js';
 import { uid, useStore } from '../store.jsx';
 
 function HomeWorry({ w, fresh }) {
@@ -113,7 +114,6 @@ const LANES = [
   { key: 'mgmt', label: '업무 빨리 끝내기', icon: 'clock', tone: 'orange', cats: ['업무 역량'] },
 ];
 const CAT_THUMB = { '수업·평가': 0, 교육과정: 1, 생활교육: 2, 학급경영: 2, '디지털·AI': 3, '정신건강·자기돌봄': 1, '업무 역량': 4, 진로교육: 4 };
-const matCat = (m) => (m.type === '생활교육' ? '생활교육' : /AI|디지털/.test(m.title) ? '디지털·AI' : m.type === '진로자료' ? '진로교육' : '수업·평가');
 
 // 연수·배움 모듈·교육자료를 '성장 콘텐츠' 한 줄로 모은다. 카드를 누르면 원래 화면으로 간다.
 function useContents() {
@@ -127,15 +127,18 @@ function useContents() {
   ];
 }
 
-function ContentCard({ c, big }) {
+// 첫 화면 격자: 0번 큰 카드가 왼쪽 두 줄, 1·2번이 윗줄, 3·4번이 아랫줄. [이웃 번호, 겹칠 때 벌점]
+const HOME_NEAR = [[], [[0, 100]], [[1, 100], [0, 5]], [[0, 100], [1, 100], [2, 5]], [[3, 100], [2, 100], [1, 5], [0, 5]]];
+
+function ContentCard({ c, big, img }) {
   return (
     <Link to={c.to} className={`fc ${big ? 'fc--big' : ''}`}>
-      <div className={`fc__thumb thumb--${CAT_THUMB[c.cat] ?? 0}`}>
-        <Icon name={c.icon} size={big ? 40 : 28} />
+      <div className={`fc__thumb thumb--${CAT_THUMB[c.cat] ?? 0} ${img ? 'has-img' : ''}`}>
+        {img ? <img className="thumb__img" src={img} alt="" loading="lazy" decoding="async" /> : <Icon name={c.icon} size={big ? 40 : 28} />}
         <span className="fc__kind">{c.kind}</span>
       </div>
       <div className="fc__body">
-        <div className="chips"><Chip tone={c.kind === '연수' ? 'blue' : c.kind === '자료' ? 'purple' : 'green'}>{c.kind}</Chip><Chip>{c.cat}</Chip>{c.share === '우리 학교' && <Chip tone="orange" solid>우리 학교</Chip>}</div>
+        <div className="chips"><Chip>{c.cat}</Chip>{c.share === '우리 학교' && <Chip tone="orange" solid>우리 학교</Chip>}</div>
         <b className="fc__title">{c.title}</b>
         <span className="fc__who"><Avatar name={c.who} size={22} /> {c.who} · {c.where}</span>
         <span className="fc__meta mono"><span className="nowrap"><Icon name="heart" size={13} /> {num(c.likes)}</span><span className="nowrap"><Icon name="users" size={13} /> {num(c.users)}</span><span className="nowrap"><Icon name="clock" size={13} /> {c.meta}</span></span>
@@ -181,6 +184,7 @@ export default function Home() {
   const byKind = ['모듈', '연수', '자료'].map((k) => ranked.filter((c) => c.kind === k));
   const shown = [];
   for (let i = 0; shown.length < 5 && i < ranked.length; i += 1) byKind.forEach((list) => { if (list[i] && shown.length < 5) shown.push(list[i]); });
+  const imgs = thumbsFor(shown, (c) => c.cat, (i) => HOME_NEAR[i] ?? []);
   const got = BADGES.filter((b) => b.got).length;
   const search = (e) => { e.preventDefault(); if (q.trim()) nav(`/search?q=${encodeURIComponent(q.trim())}`); };
   return (
@@ -217,7 +221,7 @@ export default function Home() {
             <h2 className="home__h2">{cur ? `${cur.label} · 볼 만한 콘텐츠` : '이번 주 선생님들이 많이 본 성장 콘텐츠'}</h2>
             <Tabs size="sm" value={sort} onChange={setSort} items={['나에게 맞는 순', '인기순']} />
           </div>
-          <div className="fc-grid">{shown.map((c, i) => <ContentCard key={c.id} c={c} big={i === 0} />)}</div>
+          <div className="fc-grid">{shown.map((c, i) => <ContentCard key={c.id} c={c} big={i === 0} img={imgs[i]} />)}</div>
           <div className="row-end"><Link to="/learn/trainings" className="more">연수 더 보기 <Icon name="right" size={13} /></Link><Link to="/learn/modules" className="more">배움 모듈 더 보기 <Icon name="right" size={13} /></Link><Link to="/learn/materials" className="more">교육자료 더 보기 <Icon name="right" size={13} /></Link></div>
         </section>
         <Worries />

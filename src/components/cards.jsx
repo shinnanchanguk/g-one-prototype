@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BADGE_STAGES, COMM_TYPES, DELIVERY_INFO, LEVEL_COLOR, ME, TODAY, TRAINING_TYPE_INFO, badgeOf } from '../data/seed.js';
 import { SCOPE_LABEL, classAccess, shortOffice } from '../fit.js';
+import { matCat, thumbOf } from '../thumbs.js';
 import { useStore } from '../store.jsx';
 import Icon from './Icon.jsx';
 import { Avatar, Chip, InfoPop, Modal, Progress, fmtDate, num, shortDate } from './ui.jsx';
@@ -52,7 +53,8 @@ export function TypeBadge({ t }) {
 }
 
 // 연수 한 건. 목록·첫 화면·검색 공용. 상세는 팝업 대신 카드 아래로 펼친다.
-export function TrainingCard({ t, compact, defaultOpen = false }) {
+export function TrainingCard({ t, compact, defaultOpen = false, thumb }) {
+  const img = thumb !== undefined ? thumb : thumbOf(t.cat, t.id);
   const { s } = useStore();
   const act = useTrainingActions();
   const [open, setOpen] = useState(defaultOpen);
@@ -65,9 +67,9 @@ export function TrainingCard({ t, compact, defaultOpen = false }) {
   const btn = { applied: '신청 완료', open: '신청하기', soon: `${yy(t.applyFrom)}부터 신청`, closed: '신청 마감' }[state];
   return (
     <article className={`tcard ${compact ? 'tcard--compact' : ''} ${open ? 'is-open' : ''}`}>
-      <div className={`tcard__thumb thumb--${CAT_THUMB[t.cat] ?? 0}`}>
-        <Icon name={CAT_ICON[t.cat] ?? 'book'} size={compact ? 24 : 30} />
-        <span className="mono">{t.cat}</span>
+      <div className={`tcard__thumb thumb--${CAT_THUMB[t.cat] ?? 0} ${img ? 'has-img' : ''}`}>
+        {img ? <img className="thumb__img" src={img} alt="" loading="lazy" decoding="async" /> : <Icon name={CAT_ICON[t.cat] ?? 'book'} size={compact ? 24 : 30} />}
+        <span className="mono thumb__label">{t.cat}</span>
         <button className={`tcard__keep ${kept ? 'is-on' : ''}`} onClick={() => act.keep(t)} aria-pressed={kept} aria-label={kept ? '관심 연수에서 빼기' : '관심 연수로 담기'}><Icon name="heart" size={16} /></button>
       </div>
       <div className="tcard__body">
@@ -141,7 +143,8 @@ export function ModuleCard({ m, onOpen }) {
   );
 }
 
-export function MaterialCard({ m, compact }) {
+export function MaterialCard({ m, compact, thumb }) {
+  const img = thumb !== undefined ? thumb : thumbOf(matCat(m), m.id);
   const st = useStore();
   const liked = !!st.s.liked[m.id];
   const like = () => {
@@ -150,16 +153,16 @@ export function MaterialCard({ m, compact }) {
   };
   return (
     <article className={`mcard ${compact ? 'mcard--compact' : ''}`}>
-      <div className={`mcard__thumb thumb--${[...m.id].reduce((a, c) => a + c.charCodeAt(0), 0) % 5}`}>
-        <Icon name={m.type === '평가자료' ? 'target' : m.type === '장학자료' ? 'layers' : m.type === '생활교육' ? 'heart' : m.type === '진로자료' ? 'compass' : 'file'} size={compact ? 22 : 28} />
-        <span className="mono">{m.subject}</span>
+      <div className={`mcard__thumb thumb--${[...m.id].reduce((a, c) => a + c.charCodeAt(0), 0) % 5} ${img ? 'has-img' : ''}`}>
+        {img ? <img className="thumb__img" src={img} alt="" loading="lazy" decoding="async" /> : <Icon name={m.type === '평가자료' ? 'target' : m.type === '장학자료' ? 'layers' : m.type === '생활교육' ? 'heart' : m.type === '진로자료' ? 'compass' : 'file'} size={compact ? 22 : 28} />}
+        <span className="mono thumb__label">{m.subject}</span>
       </div>
       <div className="mcard__body">
         <div className="mcard__top"><Chip tone="purple">{m.type}</Chip>{!compact && <Chip>{m.level}</Chip>}</div>
         <Link className="mcard__title" to={`/learn/materials/${m.id}`}>{m.title}</Link>
         <p className="mcard__desc">{m.desc}</p>
         <div className="mcard__foot">
-          <span>{m.author} 선생님 <i /> {shortDate(m.date)}</span>
+          <span className="mcard__by"><span className="mcard__au">{m.author} 선생님</span><i /><span className="nowrap">{shortDate(m.date)}</span></span>
           <span className="mcard__nums">
             <button className={`likebtn ${liked ? 'is-on' : ''}`} onClick={like} aria-pressed={liked} aria-label="좋아요"><Icon name="heart" size={15} />{num(m.likes + (liked ? 1 : 0))}</button>
             <span className="mono"><Icon name="download" size={14} />{num(m.downloads)}</span>
