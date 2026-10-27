@@ -262,8 +262,8 @@ export function OpenClasses() {
 
           <div className="ofilter">
             <Tabs size="sm" value={scope} onChange={setScope} items={[{ value: '전체', label: `전체 ${scopeCount('전체')}` }, ...SCOPES.map((sc) => ({ value: sc, label: `${SCOPE_LABEL[sc]} ${scopeCount(sc)}` }))]} />
-            <Select label="참관 대상 학교급" value={band} onChange={setBand} options={BAND_OPTS} />
-            <Select label="교과" value={subject} onChange={setSubject} options={['전체 교과', ...new Set(visible.map((o) => o.subject))]} />
+            <Select label="참관 대상 학교급" size="sm" value={band} onChange={setBand} options={BAND_OPTS} />
+            <Select label="교과" size="sm" value={subject} onChange={setSubject} options={['전체 교과', ...new Set(visible.map((o) => o.subject))]} />
             <button className={`btn btn--sm ${pickRegion ? 'btn--dark' : 'btn--line'}`} onClick={() => setPickRegion(!pickRegion)} aria-expanded={pickRegion}>
               <Icon name="pin" size={14} />지역 · {regions === 'all' ? '경기도 전체' : regions.length === 1 ? shortOffice(regions[0]) : `${shortOffice(regions[0])} 외 ${regions.length - 1}곳`}
             </button>

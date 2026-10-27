@@ -141,9 +141,9 @@ export function SearchBox({ value, onChange, placeholder }) {
   );
 }
 
-export function Select({ value, onChange, options, label }) {
+export function Select({ value, onChange, options, label, size }) {
   return (
-    <label className="select">
+    <label className={`select ${size === 'sm' ? 'select--sm' : ''}`}>
       <span className="sr">{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
         {options.map((o) => <option key={o} value={o}>{o}</option>)}

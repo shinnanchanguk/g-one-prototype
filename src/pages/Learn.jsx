@@ -70,7 +70,7 @@ export function Trainings() {
           <Tabs size="sm" value={org} onChange={setOrg} items={['전체', ...ORGS].map((o) => ({ value: o, label: `${o === '전체' ? '전체 주관' : o} ${TRAININGS.filter((t) => o === '전체' || t.org === o).length}` }))} />
           <div className="row-end">
             <span className="mono">{list.length}건 · {p.band}{p.subject ? ` · ${p.subject}` : ''} 기준</span>
-            <Select label="정렬" value={sort} onChange={setSort} options={T_SORTS} />
+            <Select label="정렬" size="sm" value={sort} onChange={setSort} options={T_SORTS} />
           </div>
         </div>
         <div className="tcards">
