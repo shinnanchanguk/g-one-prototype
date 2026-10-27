@@ -193,7 +193,7 @@ export function Mentoring() {
               <div className="mtr__head">
                 <Avatar name={m.partner} size={44} />
                 <div><span className="mono">{m.role === '멘티' ? '나의 멘토' : '나의 멘티'} · {m.field}</span><h3>{m.topic}</h3><p>{m.partner} · 신청 {fmtDate(m.created)}</p></div>
-                <Chip tone={cur >= 4 ? 'green' : cur === 0 ? 'orange' : 'blue'} solid>{MENTORING_STEPS[cur]}</Chip>
+                <Chip tone={cur >= 4 ? 'green' : cur === 0 ? 'orange' : 'ink'} solid>{MENTORING_STEPS[cur]}</Chip>
               </div>
               <ol className="track">
                 {MENTORING_STEPS.map((s, i) => <li key={s} className={i < cur ? 'is-done' : i === cur ? 'is-on' : ''}><span className="track__dot">{i < cur && <Icon name="check" size={12} stroke={2.6} />}</span><span>{s}</span></li>)}

@@ -2,7 +2,7 @@
 // 분류는 도름스 가입 때 받는 체계(학교급 4개 + 교과·담당 목록, 없으면 직접 입력)를 그대로 쓴다.
 import { useEffect, useState } from 'react';
 import { OFFICES, SCHOOL_LEVELS, SUBJECTS } from '../data/seed.js';
-import { SUBJECT_MAX, cleanProfile, cleanSubject, profileLabel, schoolFor, shortOffice } from '../fit.js';
+import { SUBJECT_MAX, cleanProfile, cleanSubject, profileLabel, schoolFor, shortOffice, withRo } from '../fit.js';
 import { useStore } from '../store.jsx';
 import Icon from './Icon.jsx';
 import { Field, Modal } from './ui.jsx';
@@ -46,9 +46,9 @@ export function ProfileModal({ open, onClose }) {
         <div className="seg seg--full" role="radiogroup" aria-label="학교급">
           {SCHOOL_LEVELS.map((l) => <button key={l} type="button" role="radio" aria-checked={f.level === l} className={f.level === l ? 'is-on' : ''} onClick={() => setF({ ...f, level: l })}>{l}</button>)}
         </div>
-        <span className="field__hint">중학교와 고등학교 선생님께는 두 학교급 자료를 함께 보여 드려요. 체험용이라 우리 학교는 {schoolFor(f.level, cleanSubject(f.subject))}로 정해져요.</span>
+        <span className="field__hint">중학교와 고등학교 선생님께는 두 학교급 자료를 함께 보여 드려요. 체험용이라 우리 학교는 {withRo(schoolFor(f.level, cleanSubject(f.subject)))} 정해져요.</span>
       </div>
-      <Field label={secondary ? '담당 교과·업무 (꼭 골라 주세요)' : '담당 교과·업무 (선택)'} hint="특수교육, 상담, 보건, 사서, 영양 선생님은 학교급보다 같은 담당 자료를 먼저 보여 드려요.">
+      <Field label={secondary ? '담당 교과·업무 (꼭 골라 주세요)' : '담당 교과·업무 (선택)'} hint="특수교육, 상담, 보건, 사서, 영양 선생님께는 학교급보다 같은 담당 자료를 먼저 보여 드려요.">
         <select className="input" value={custom ? CUSTOM : f.subject} onChange={(e) => pickSubject(e.target.value)}>
           <option value="">고르지 않음</option>
           {SUBJECTS.map((x) => <option key={x}>{x}</option>)}

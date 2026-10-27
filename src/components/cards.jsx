@@ -77,7 +77,7 @@ export function TrainingCard({ t, compact, defaultOpen = false, thumb }) {
           <TypeBadge t={t} />
           <InfoPop className="infopop--plain" label={DELIVERY_LABEL[t.delivery]} title={DELIVERY_LABEL[t.delivery]}>{DELIVERY_INFO[t.delivery]}</InfoPop>
           <span className="tcard__org">{t.host}</span>
-          <Chip tone={status[1]}>{status[0]}</Chip>
+          <Chip tone={status[1]} solid={state === 'applied'}>{state === 'applied' && <Icon name="check" size={12} />}{status[0]}</Chip>
         </div>
         <button className="tcard__title" onClick={() => setOpen(!open)} aria-expanded={open}>{t.title}</button>
         <dl className="tcard__meta">
@@ -200,7 +200,7 @@ export function ScopeChip({ scope }) {
   return <span className={`scope scope--${{ 도: 'do', 지원청: 'office', 학교: 'school' }[scope]}`}>{SCOPE_LABEL[scope]}</span>;
 }
 
-// 공개수업 한 건. 시안 다섯 개(피드·교과·주간·지도·달력)가 모두 이 카드를 쓴다.
+// 공개수업 한 건. 시안 네 개(피드·주간·지도·달력)가 모두 이 카드를 쓴다.
 export function OpenClassCard({ o, onOpen, showDist }) {
   const { s } = useStore();
   const access = classAccess(o, s.profile);
@@ -252,7 +252,7 @@ export function OpenClassModal({ o, onClose }) {
       }}>{label}</button>}>
       <div className="chips">
         <ScopeChip scope={o.scope} />
-        <Chip tone={LEVEL_COLOR[o.level]} solid>{o.level}</Chip>
+        <Chip tone={LEVEL_COLOR[o.level]}>{o.level}</Chip>
         <Chip>참관 대상 {o.audience.join('·')}</Chip>
       </div>
       <h4 className="h4">{o.topic}</h4>

@@ -168,6 +168,7 @@ export function OpenClasses() {
     setBand(next ? '전체 학교급' : p.band);
     setSubject('전체 교과');
     setRegions('all');
+    setScope('전체');
     st.toast(next ? '다른 학교급·교과·지역 공개수업까지 모두 보여 드려요' : '선생님께 맞는 공개수업부터 보여 드려요');
   };
   const [open, setOpen] = useState(null);
@@ -235,14 +236,14 @@ export function OpenClasses() {
           </div>
 
           <div className="ofilter">
-            <button className={`btn btn--sm ${wide ? 'btn--dark' : 'btn--line'}`} onClick={toggleWide} aria-pressed={wide} title="다른 학교급·교과·지역 공개수업도 함께 봅니다">
-              <Icon name={wide ? 'check' : 'search'} size={14} />{wide ? '넓게 찾는 중' : '넓게 찾기'}
-            </button>
             <Tabs size="sm" value={scope} onChange={setScope} items={[{ value: '전체', label: `전체 ${scopeCount('전체')}` }, ...SCOPES.map((sc) => ({ value: sc, label: `${SCOPE_LABEL[sc]} ${scopeCount(sc)}` }))]} />
             <Select label="참관 대상 학교급" size="sm" value={band} onChange={setBand} options={BAND_OPTS} />
             <Select label="교과" size="sm" value={subject} onChange={setSubject} options={['전체 교과', ...new Set(visible.map((o) => o.subject))]} />
             <button className={`btn btn--sm ${pickRegion ? 'btn--dark' : 'btn--line'}`} onClick={() => setPickRegion(!pickRegion)} aria-expanded={pickRegion}>
               <Icon name="pin" size={14} />지역 · {regions === 'all' ? '경기도 전체' : regions.length === 1 ? shortOffice(regions[0]) : `${shortOffice(regions[0])} 외 ${regions.length - 1}곳`}
+            </button>
+            <button className={`btn btn--sm ${wide ? 'btn--dark' : 'btn--line'}`} onClick={toggleWide} aria-pressed={wide} title="다른 학교급·교과·지역 공개수업도 함께 봐요">
+              <Icon name={wide ? 'check' : 'search'} size={14} />{wide ? '넓게 찾는 중' : '넓게 찾기'}
             </button>
           </div>
           {pickRegion && (

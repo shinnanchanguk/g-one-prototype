@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { DELIVERY_LABEL, MaterialCard, ModuleCard, TrainingCard, trainingState } from '../components/cards.jsx';
 import Icon from '../components/Icon.jsx';
@@ -34,6 +34,8 @@ export function Trainings() {
   const [target, setTarget] = useState('신규·경력 모두');
   const [cat, setCat] = useState('전체');
   const [sort, setSort] = useState(sortModeFor(p) === '교과' ? '교과 먼저' : '학교급 먼저');
+  // 내 정보에서 담당을 바꾸면 정렬 기준도 따라 바꾼다
+  useEffect(() => { setSort(sortModeFor(p) === '교과' ? '교과 먼저' : '학교급 먼저'); }, [p.subject, p.level]);
 
   const list = useMemo(() => {
     const base = TRAININGS.filter((t) =>

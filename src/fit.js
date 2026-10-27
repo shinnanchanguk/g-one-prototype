@@ -16,7 +16,14 @@ export const cleanSubject = (v) => {
   if (typeof v !== 'string') return '';
   // 글자 수는 이모지 같은 겹글자도 한 글자로 센다
   const t = Array.from(v.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim()).slice(0, SUBJECT_MAX).join('');
+  if (t === '직접 입력') return '';
   return Object.hasOwn(SUBJECT_ALIAS, t) ? SUBJECT_ALIAS[t] : t;
+};
+// "햇살유치원으로 / 한빛초등학교로"처럼 받침을 보고 조사를 붙인다(ㄹ 받침이면 '로')
+export const withRo = (word) => {
+  const code = word.trim().slice(-1).charCodeAt(0) - 0xac00;
+  const jong = code >= 0 && code <= 11171 ? code % 28 : -1;
+  return `${word}${jong === 0 || jong === 8 ? '로' : '으로'}`;
 };
 // 담당이 특수교육·상담·보건·사서·영양이면 같은 담당 자료를, 아니면 같은 학교급 자료를 먼저 보여 준다
 export const sortModeFor = (p) => (DUTY_SUBJECTS.includes(p.subject) ? '교과' : '학교급');
@@ -27,7 +34,8 @@ export function cleanProfile(p) {
   if (!p || typeof p !== 'object') return { ...d };
   // 예전 체험판은 학교급 묶음(band)만 저장했다. 특수였으면 담당을 특수교육으로 옮긴다
   const level = SCHOOL_LEVELS.includes(p.level) ? p.level : Object.hasOwn(OLD_BAND_LEVEL, p.band) ? OLD_BAND_LEVEL[p.band] : d.level;
-  const subject = cleanSubject(p.subject) || (!p.level && p.band === '특수' ? '특수교육' : '');
+  // 예전에 특수로 고른 분은 담당을 특수교육으로 옮긴다(특수 소속이 사라지지 않게)
+  const subject = !p.level && p.band === '특수' ? '특수교육' : cleanSubject(p.subject);
   const office = OFFICES.some((o) => o.name === p.office) ? p.office : d.office;
   const cities = OFFICES.find((o) => o.name === office).cities;
   return {
@@ -37,7 +45,8 @@ export function cleanProfile(p) {
     office,
     school: schoolFor(level, subject),
     city: cities.includes(p.city) ? p.city : cities[0],
-    set: p.set === true,
+    // 중·고등학교인데 담당이 비어 있으면 한 번 더 묻는다
+    set: p.set === true && !((level === '중학교' || level === '고등학교') && !subject),
   };
 }
 // 머리말·안내에 쓰는 한 줄 표기: "초등학교 · 보건 · 수원"

@@ -1035,3 +1035,11 @@ img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
 .sortrow { flex-wrap: nowrap; }
 .sortrow > .tabs { flex: 1 1 auto; min-width: 0; }
 .sortrow > .mono { flex: none; }
+
+/* 좁은 화면: 아이콘 옆에 문장, 그 아래 같은 시작선에 내 성장 여정·버튼 */
+@media (max-width: 640px) {
+  .home__soft { display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; }
+  .home__soft > .home__mine, .home__soft > .btn { grid-column: 2; justify-self: start; }
+}
+/* 연한 초록 바탕 위 링크 글자는 본문 대비 기준(4.5:1)을 넘게 조금 진하게 */
+.home__soft .home__mine { color: var(--ink-2); }
