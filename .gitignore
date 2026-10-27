@@ -5,3 +5,6 @@ _verify/
 .claude/
 .DS_Store
 .vercel
+.feedback-audio/
+.omc/
+.playwright-mcp/

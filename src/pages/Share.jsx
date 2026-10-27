@@ -1,102 +1,331 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { CommunityCard, OpenClassModal } from '../components/cards.jsx';
+import { Fragment, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { CommunityCard, OpenClassCard, OpenClassModal, ScopeChip } from '../components/cards.jsx';
 import { GyeonggiMap, MonthCalendar } from '../components/charts.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Empty, Field, Modal, PageHead, Panel, SearchBox, Select, Tabs, fmtDate, num, shortDate } from '../components/ui.jsx';
-import { BOARD_TABS, COMM_POSTS, COMM_TYPES, COMMUNITIES, LEVEL_COLOR, LEVELS, ME, OFFICES, OPEN_CLASSES, OUTCOMES, TODAY } from '../data/seed.js';
+import { BANDS, BOARD_TABS, COMM_POSTS, COMM_TYPES, COMMUNITIES, LEVELS, ME, OFFICES, OPEN_CLASSES, OUTCOMES, SUBJECTS, TODAY, officeOf } from '../data/seed.js';
+import { SCOPE_HELP, SCOPE_LABEL, classAccess, distKm, neighborOffices, shortOffice } from '../fit.js';
 import { uid, useStore } from '../store.jsx';
 
+const VIEWS = [
+  { v: 'feed', n: 1, label: '맞춤 피드', icon: 'list', solves: '정보가 너무 많고 범위가 헷갈리는 문제', note: '우리 학교 동료장학, 우리 지원청, 같은 교과, 도 단위 순으로 묶어 내게 맞는 것부터 보여 줘요.' },
+  { v: 'subject', n: 2, label: '교과별 찾기', icon: 'book', solves: '드문 교과를 찾아다녀야 하는 문제', note: '교과를 먼저 고르면 경기도 전체에서 그 교과 수업이 모여요. 관심 교과 알림도 받을 수 있어요.' },
+  { v: 'week', n: 3, label: '주간 일정표', icon: 'clock', solves: '달력 칸에 정보가 다 안 들어가는 문제', note: '이번 주와 다음 주를 요일과 오전·오후로 나눠 보여 줘요. 내 수업·신청과 겹치는지 바로 보여요.' },
+  { v: 'map', n: 4, label: '지도·가까운 순', icon: 'map', solves: '내 지역과 이웃 지역을 골라 보기 어려운 문제', note: '지도에서 시·군을 눌러 지역을 넣고 빼요. 목록은 우리 학교에서 가까운 순이에요.' },
+  { v: 'cal', n: 5, label: '한 달 달력', icon: 'calendar', solves: '기존 달력이 복잡한 문제', note: '기존 달력을 고친 안이에요. 날짜를 누르면 그날 수업이 옆에 펼쳐져요.' },
+];
+const BAND_OPTS = ['전체 학교급', ...BANDS];
+const WEEK0 = '2026-10-26';
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
+
+function Group({ title, sub, items, onOpen, max = 4, dist }) {
+  const [all, setAll] = useState(false);
+  if (!items.length) return null;
+  return (
+    <section className="ogroup">
+      <h3 className="ogroup__title">{title}<span className="mono">{items.length}</span>{sub && <small>{sub}</small>}</h3>
+      <div className="oclist">{(all ? items : items.slice(0, max)).map((o) => <OpenClassCard key={o.id} o={o} onOpen={onOpen} showDist={dist?.(o)} />)}</div>
+      {items.length > max && <button className="more" onClick={() => setAll(!all)}>{all ? '접기' : `${items.length - max}건 더 보기`}</button>}
+    </section>
+  );
+}
+
+function FeedView({ list, nearExtra, p, onOpen }) {
+  const near = neighborOffices(p.office);
+  const used = new Set();
+  const take = (f) => list.filter((o) => !used.has(o.id) && f(o)).map((o) => { used.add(o.id); return o; });
+  const school = take((o) => o.scope === '학교');
+  const mine = take((o) => o.office === p.office);
+  const subj = p.subject ? take((o) => o.subject === p.subject && o.scope === '도') : [];
+  const doBand = take((o) => o.scope === '도' && o.audience.includes(p.band));
+  const nearby = [...take((o) => near.includes(o.office)), ...nearExtra.filter((o) => !used.has(o.id))];
+  const rest = take(() => true);
+  return (
+    <div>
+      <Group title="우리 학교 동료장학" sub="같은 학교 선생님에게만 보여요" items={school} onOpen={onOpen} />
+      <Group title={`우리 지원청 · ${shortOffice(p.office)}`} sub="지원청 단위와 우리 지역 도 단위 공개" items={mine} onOpen={onOpen} />
+      <Group title={`같은 교과 · ${p.subject}`} sub="도 단위 공개" items={subj} onOpen={onOpen} />
+      <Group title={`도 단위 · ${p.band} 대상`} items={doBand} onOpen={onOpen} />
+      <Group title="이웃 지원청" sub={`${near.map(shortOffice).join(' · ')} · 지원청 단위는 그 지원청 선생님 대상이라 지도안만 볼 수 있어요`} items={nearby} onOpen={onOpen} />
+      <Group title="그 밖의 공개수업" items={rest} onOpen={onOpen} max={2} />
+      {!list.length && <Empty text="조건에 맞는 공개수업이 없어요. 범위나 지역을 넓혀 보세요." />}
+    </div>
+  );
+}
+
+// 드문 교과: 경기도 전체에서 중·고등학교 공개가 한 건뿐인 교과(고교 선택 과목 등)
+function SubjectView({ list, all, p, onOpen }) {
+  const st = useStore();
+  const subjects = [...new Set(all.map((o) => o.subject))];
+  const count = (x) => list.filter((o) => o.subject === x).length;
+  const rare = (x) => { const xs = all.filter((o) => o.subject === x); return xs.length === 1 && ['중학교', '고등학교'].includes(xs[0].level); };
+  const ordered = subjects.sort((a, b) => (b === p.subject) - (a === p.subject) || count(b) - count(a));
+  const [sub, setSub] = useState(p.subject && subjects.includes(p.subject) ? p.subject : ordered[0]);
+  const items = list.filter((o) => o.subject === sub);
+  const alert = !!st.s.subjectAlerts[sub];
+  return (
+    <div className="sview">
+      <ul className="sview__list" role="tablist" aria-label="교과">
+        {ordered.map((x) => (
+          <li key={x}><button role="tab" aria-selected={sub === x} className={`${sub === x ? 'is-on' : ''} ${count(x) ? '' : 'is-zero'}`} onClick={() => setSub(x)}>
+            <b>{x}</b>{rare(x) && <span className="sview__rare">드문 교과</span>}{st.s.subjectAlerts[x] && <Icon name="bell" size={13} />}<span className="mono">{count(x)}</span>
+          </button></li>
+        ))}
+      </ul>
+      <div className="sview__main">
+        <div className="row-between">
+          <h3 className="h4">{sub} 공개수업 <span className="mono">{items.length}건 · 경기도 전체</span></h3>
+          <button className={`btn btn--sm ${alert ? 'btn--dark' : 'btn--line'}`} onClick={() => { st.toggle('subjectAlerts', sub); st.toast(alert ? `「${sub}」 알림을 껐어요` : `「${sub}」 공개수업이 새로 올라오면 알려 드릴게요`); }} aria-pressed={alert}>
+            <Icon name="bell" size={14} />{alert ? '알림 받는 중' : '이 교과 새 공개수업 알림 받기'}
+          </button>
+        </div>
+        <div className="oclist">{items.map((o) => <OpenClassCard key={o.id} o={o} onOpen={onOpen} />)}</div>
+        {!items.length && <Empty text="지금 조건에서는 이 교과 공개수업이 없어요. 학교급이나 지역 조건을 넓혀 보세요." />}
+      </div>
+    </div>
+  );
+}
+
+function WeekView({ list, onOpen }) {
+  const st = useStore();
+  const [w, setW] = useState(0);
+  const start = addDays(WEEK0, w * 7);
+  const days = [0, 1, 2, 3, 4].map((i) => addDays(start, i));
+  const my = st.s.myClasses.concat(OPEN_CLASSES.filter((o) => o.teacher === ME.name));
+  const slot = (o) => (Number(o.time.slice(0, 2)) < 12 ? '오전' : '오후');
+  const label = w === 0 ? '이번 주' : w === 1 ? '다음 주' : w === -1 ? '지난주' : `${w}주 뒤`;
+  return (
+    <Panel>
+      <div className="cal__bar">
+        <button className="iconbtn" onClick={() => setW(w - 1)} aria-label="이전 주"><Icon name="left" /></button>
+        <strong>{label} <span className="mono">{shortDate(days[0])} ~ {shortDate(days[4])}</span></strong>
+        <button className="iconbtn" onClick={() => setW(w + 1)} aria-label="다음 주"><Icon name="right" /></button>
+      </div>
+      <div className="week">
+        <div className="week__corner" />
+        {days.map((d) => <div key={d} className={`week__day ${d === TODAY ? 'is-today' : ''}`}><b>{'일월화수목금토'[new Date(d).getDay()]}</b><span className="mono">{shortDate(d)}</span></div>)}
+        {['오전', '오후'].map((sl) => (
+          <Fragment key={sl}>
+            <div className="week__slot">{sl}</div>
+            {days.map((d) => {
+              const here = list.filter((o) => o.date === d && slot(o) === sl);
+              const mine = my.filter((o) => o.date === d && slot(o) === sl);
+              return (
+                <div key={d + sl} className="week__cell">
+                  {mine.map((o) => <span key={o.id} className="wk wk--mine"><b>내 수업</b>{o.time} {o.subject}</span>)}
+                  {here.filter((o) => !mine.some((x) => x.id === o.id)).map((o) => (
+                    <button key={o.id} className={`wk ${st.s.classApps[o.id] ? 'is-applied' : ''} ${o.locked ? 'is-locked' : ''}`} onClick={() => onOpen(o)}>
+                      <span className="wk__top"><ScopeChip scope={o.scope} /><span className="mono">{o.time}</span></span>
+                      <b>{o.subject} · {o.topic}</b>
+                      <small>{o.school} · {shortOffice(o.office)}</small>
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+      <ul className="legend"><li><span className="wk wk--mine wk--dot" />내가 여는 수업</li><li><span className="wk is-applied wk--dot" />참관 신청함</li><li><ScopeChip scope="학교" />우리 학교만</li><li><ScopeChip scope="지원청" />지원청 단위</li><li><ScopeChip scope="도" />도 단위</li></ul>
+    </Panel>
+  );
+}
+
+function MapView({ list, p, regions, setRegions, onOpen }) {
+  const [sel, setSel] = useState(null);
+  const offices = regions === 'all' ? null : regions;
+  const regionCities = new Set((offices ?? [p.office, ...neighborOffices(p.office)]).flatMap((n) => OFFICES.find((o) => o.name === n).cities));
+  const pick = (city) => {
+    const off = officeOf(city);
+    const cur = regions === 'all' ? [] : regions;
+    const next = cur.includes(off) ? cur.filter((x) => x !== off) : [...cur, off];
+    setRegions(next.length ? next : 'all');
+  };
+  const sorted = [...list].sort((a, b) => distKm(p.city, a.city) - distKm(p.city, b.city) || a.date.localeCompare(b.date));
+  return (
+    <div className="mapwrap">
+      <Panel className="mapwrap__map">
+        <p className="note"><Icon name="pin" size={15} />{regions === 'all' ? '진하게 칠한 곳이 우리 지원청과 이웃 지원청이에요. 시·군을 누르면 그 지역만 골라 볼 수 있어요.' : '고른 지역만 보여요. 다시 누르면 빠져요.'}</p>
+        <GyeonggiMap items={list} selected={sel} onSelect={setSel} onOpen={onOpen} regionCities={regionCities} homeCity={p.city} focusCity={p.city} onCity={pick} />
+      </Panel>
+      <Panel className="mapwrap__list" title="우리 학교에서 가까운 순" code={`${sorted.length}건 · 시·군 중심 거리`}>
+        <div className="oclist">{sorted.map((o) => <OpenClassCard key={o.id} o={o} onOpen={onOpen} showDist={distKm(p.city, o.city)} />)}</div>
+        {!sorted.length && <Empty text="고른 지역에 공개수업이 없어요" />}
+      </Panel>
+    </div>
+  );
+}
+
+function CalView({ list, onOpen }) {
+  const [ym, setYm] = useState([2026, 11]);
+  const [day, setDay] = useState('2026-11-04');
+  const move = (d) => setYm(([y, m]) => { const n = m + d; return n < 1 ? [y - 1, 12] : n > 12 ? [y + 1, 1] : [y, n]; });
+  const dayList = list.filter((o) => o.date === day);
+  return (
+    <div className="calwrap">
+      <Panel>
+        <MonthCalendar year={ym[0]} month={ym[1]} items={list} onOpen={onOpen} onMove={move} selected={day} onPick={setDay} />
+        <ul className="legend"><li><ScopeChip scope="도" />도 단위</li><li><ScopeChip scope="지원청" />지원청 단위</li><li><ScopeChip scope="학교" />우리 학교만</li></ul>
+      </Panel>
+      <Panel className="calwrap__side" title={fmtDate(day)} code={`그날 공개수업 ${dayList.length}건`}>
+        <div className="oclist">{dayList.map((o) => <OpenClassCard key={o.id} o={o} onOpen={onOpen} />)}</div>
+        {!dayList.length && <p className="empty-line">이날은 공개수업이 없어요. 달력에서 숫자가 있는 날을 눌러 보세요.</p>}
+      </Panel>
+    </div>
+  );
+}
+
+const SCOPES = ['학교', '지원청', '도'];
 export function OpenClasses() {
   const st = useStore();
-  const [view, setView] = useState('cal');
+  const p = st.s.profile;
+  const [sp, setSp] = useSearchParams();
+  const view = VIEWS.some((x) => x.v === sp.get('v')) ? sp.get('v') : st.s.classView;
+  const setView = (v) => { st.patch(() => ({ classView: v })); setSp({ v }, { replace: true }); };
   const [tab, setTab] = useState('explore');
-  const [ym, setYm] = useState([2026, 11]);
   const [scope, setScope] = useState('전체');
-  const [lvl, setLvl] = useState('전체');
-  const [sel, setSel] = useState(null);
+  const [regions, setRegions] = useState('all');
+  const [pickRegion, setPickRegion] = useState(false);
+  const [band, setBand] = useState(p.band);
+  const [subject, setSubject] = useState('전체 교과');
   const [open, setOpen] = useState(null);
-  const [f, setF] = useState({ date: '2026-12-02', time: '10:40~11:20', subject: '', topic: '', grade: '', scope: '지원청', cap: 20 });
+  const [f, setF] = useState({ date: '2026-12-02', time: '10:40~11:20', subject: p.subject || '수학', topic: '', grade: '', scope: '학교', cap: 10, audience: [p.band], file: '', goal: '', flow: '' });
+
   const all = [...st.s.myClasses, ...OPEN_CLASSES];
-  const list = all.filter((o) => (scope === '전체' || o.scope === scope) && (lvl === '전체' || o.level === lvl));
-  const move = (d) => setYm(([y, m]) => { const n = m + d; return n < 1 ? [y - 1, 12] : n > 12 ? [y + 1, 1] : [y, n]; });
-  const mine = OPEN_CLASSES.filter((o) => st.s.classApps[o.id]);
+  // 다른 학교의 '우리 학교' 공개는 아예 안 보이고, 다른 지원청의 지원청 단위는 그 지역을 직접 골랐을 때만 보인다.
+  const visible = all.filter((o) => {
+    const a = classAccess(o, p);
+    if (a === 'hidden') return false;
+    if (a === 'other') return regions !== 'all' && regions.includes(o.office);
+    return true;
+  }).map((o) => ({ ...o, locked: classAccess(o, p) === 'other' }));
+  const filtered = visible.filter((o) =>
+    (scope === '전체' || o.scope === scope)
+    && (regions === 'all' || regions.includes(o.office))
+    && (band === '전체 학교급' || o.audience.includes(band))
+    && (subject === '전체 교과' || o.subject === subject));
+  const upcoming = filtered.filter((o) => o.date >= TODAY).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  const near = neighborOffices(p.office);
+  // 피드의 '이웃 지원청' 묶음에는 이웃 지원청의 지원청 단위 공개도 잠금 표시로 함께 보여 준다
+  const nearExtra = all.filter((o) => classAccess(o, p) === 'other' && near.includes(o.office) && o.date >= TODAY
+    && (band === '전체 학교급' || o.audience.includes(band)) && (subject === '전체 교과' || o.subject === subject) && (scope === '전체' || scope === '지원청'))
+    .map((o) => ({ ...o, locked: true }));
+  // 교과별 찾기는 경기도 전체에서 모으므로 다른 지원청의 지원청 단위 공개도 잠금 표시로 넣는다
+  const lockedAll = all.filter((o) => classAccess(o, p) === 'other' && o.date >= TODAY
+    && (band === '전체 학교급' || o.audience.includes(band)) && (scope === '전체' || scope === '지원청'))
+    .map((o) => ({ ...o, locked: true }));
+  const mine = all.filter((o) => st.s.classApps[o.id]);
+  const cur = VIEWS.find((x) => x.v === view);
+  const scopeCount = (sc) => visible.filter((o) => o.date >= TODAY && (sc === '전체' || o.scope === sc) && (regions === 'all' || regions.includes(o.office))).length;
+  const toggleOffice = (n) => { const c = regions === 'all' ? [] : regions; const next = c.includes(n) ? c.filter((x) => x !== n) : [...c, n]; setRegions(next.length ? next : 'all'); };
 
   const submit = (e) => {
     e.preventDefault();
-    if (!f.subject.trim() || !f.topic.trim()) { st.toast('과목과 수업 주제를 적어 주세요', 'warn'); return; }
-    const o = { id: uid('o'), ...f, city: '수원시', school: ME.school, level: '초등학교', teacher: ME.name, applied: 0, mode: '대면', office: f.scope === '도' ? '경기도교육청' : ME.office, cap: Number(f.cap), mine: true };
+    if (!f.subject || !f.topic.trim()) { st.toast('교과와 수업 주제를 적어 주세요', 'warn'); return; }
+    if (!f.file && !f.goal.trim()) { st.toast('지도안 파일을 올리거나 학습 목표를 적어 주세요', 'warn'); return; }
+    if (!f.audience.length) { st.toast('참관 대상 학교급을 하나 이상 골라 주세요', 'warn'); return; }
+    const flow = f.flow.split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 6);
+    const o = {
+      id: uid('o'), date: f.date, time: f.time, city: p.city, school: ME.school, level: '초등학교', grade: f.grade || '학급 미정', subject: f.subject, topic: f.topic.trim(), teacher: ME.name,
+      scope: f.scope, cap: Math.max(1, Math.min(60, Number(f.cap) || 1)), applied: 0, mode: '대면', office: p.office, audience: f.audience, mine: true,
+      plan: { file: f.file || `지도안_${f.subject}.hwpx`, goal: f.goal.trim() || f.topic.trim(), flow: flow.length ? flow : ['도입 · 생각을 여는 질문', `전개 · ${f.topic.trim()}`, '정리 · 배운 점 나누기'] },
+    };
     st.patch((s) => ({ myClasses: [o, ...s.myClasses] }));
     st.award('활동', 50, `수업 공개 등록: ${o.topic}`);
-    st.toast('공개수업을 등록했어요 · 달력과 지도에 바로 보여요');
-    setTab('explore'); setYm([Number(f.date.slice(0, 4)), Number(f.date.slice(5, 7))]);
+    st.toast(`${SCOPE_LABEL[f.scope]} 공개수업을 등록했어요 · ${f.scope === '학교' ? '우리 학교 선생님에게만 보여요' : '모든 시안에 바로 보여요'}`);
+    setTab('explore'); setScope('전체');
   };
 
   return (
     <div className="container">
-      <PageHead crumbs={['나눔', '공개수업']} code="3.1 · 공개하기 · 참관하기 · 신청 현황" title="공개수업" desc="경기도 안의 모든 공개수업을 월별 달력과 지도로 찾아보고, 참관을 신청해 성장 여정에 연결합니다." />
+      <PageHead crumbs={['나눔', '공개수업']} code="3.1 · 공개하기 · 참관하기 · 신청 현황" title="공개수업" desc="우리 학교 동료장학부터 지원청 단위, 도 단위 공개수업까지 내 학교급과 교과에 맞춰 찾고, 지도안을 미리 보고 참관을 신청합니다." />
       <Tabs value={tab} onChange={setTab} className="tabs--page" items={[{ value: 'explore', label: '참관하기', icon: 'eye' }, { value: 'open', label: '공개하기', icon: 'video' }, { value: 'status', label: `신청 현황 (${mine.length})`, icon: 'list' }]} />
 
       {tab === 'explore' && (
         <>
-          <div className="filters">
-            <div className="seg" role="tablist" aria-label="보기 방식">
-              <button role="tab" aria-selected={view === 'cal'} className={view === 'cal' ? 'is-on' : ''} onClick={() => setView('cal')}><Icon name="calendar" size={16} />달력형</button>
-              <button role="tab" aria-selected={view === 'map'} className={view === 'map' ? 'is-on' : ''} onClick={() => setView('map')}><Icon name="map" size={16} />지도형</button>
+          <div className="variantbar variantbar--wrap">
+            <span className="variantbar__k"><Icon name="layers" size={15} />화면 시안</span>
+            <div className="vpick" role="tablist" aria-label="공개수업 화면 시안">
+              {VIEWS.map((x) => (
+                <button key={x.v} role="tab" aria-selected={view === x.v} className={view === x.v ? 'is-on' : ''} onClick={() => setView(x.v)}>
+                  <span className="vpick__n">{x.n}</span><Icon name={x.icon} size={15} />{x.label}
+                </button>
+              ))}
             </div>
-            <Tabs size="sm" value={scope} onChange={setScope} items={[{ value: '전체', label: '전체' }, { value: '도', label: '도 단위' }, { value: '지원청', label: '지원청 단위' }]} />
-            <Select label="학교급" value={lvl} onChange={setLvl} options={['전체', ...LEVELS]} />
+            <p className="variantbar__note"><b>푸는 문제 · {cur.solves}</b> {cur.note}</p>
           </div>
-          {view === 'cal' ? (
-            <Panel>
-              <MonthCalendar year={ym[0]} month={ym[1]} items={list} onOpen={setOpen} onMove={move} />
-              <ul className="legend"><li><span className="cal__ev ev--do">도</span>도 단위 공개</li><li><span className="cal__ev ev--office">지원청</span>지원청 단위 공개</li></ul>
-            </Panel>
-          ) : (
-            <div className="mapwrap">
-              <Panel className="mapwrap__map"><GyeonggiMap items={list.filter((o) => o.date >= TODAY)} selected={sel} onSelect={setSel} onOpen={setOpen} /></Panel>
-              <Panel className="mapwrap__list" title="다가오는 공개수업" code={`${list.filter((o) => o.date >= TODAY).length}건`}>
-                <ul className="olist">
-                  {list.filter((o) => o.date >= TODAY).sort((a, b) => a.date.localeCompare(b.date)).map((o) => (
-                    <li key={o.id} className={sel === o.id ? 'is-sel' : ''}>
-                      <button onClick={() => setSel(o.id)}>
-                        <span className={`dot bg-${LEVEL_COLOR[o.level]}`} />
-                        <span><b>{o.subject} · {o.topic}</b><small>{shortDate(o.date)} {o.time} · {o.school} · {o.scope === '도' ? '도 단위' : o.office.replace('교육지원청', '')}</small></span>
-                        {st.s.classApps[o.id] && <Chip tone="blue">신청함</Chip>}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </Panel>
+
+          <div className="ofilter">
+            <Tabs size="sm" value={scope} onChange={setScope} items={[{ value: '전체', label: `전체 ${scopeCount('전체')}` }, ...SCOPES.map((sc) => ({ value: sc, label: `${SCOPE_LABEL[sc]} ${scopeCount(sc)}` }))]} />
+            <Select label="참관 대상 학교급" value={band} onChange={setBand} options={BAND_OPTS} />
+            <Select label="교과" value={subject} onChange={setSubject} options={['전체 교과', ...new Set(visible.map((o) => o.subject))]} />
+            <button className={`btn btn--sm ${pickRegion ? 'btn--dark' : 'btn--line'}`} onClick={() => setPickRegion(!pickRegion)} aria-expanded={pickRegion}>
+              <Icon name="pin" size={14} />지역 · {regions === 'all' ? '경기도 전체' : regions.length === 1 ? shortOffice(regions[0]) : `${shortOffice(regions[0])} 외 ${regions.length - 1}곳`}
+            </button>
+          </div>
+          {pickRegion && (
+            <div className="regions">
+              <div className="row-between">
+                <span className="mono">교육지원청 25곳 · 지원청 단위 공개는 그 지원청 선생님만 신청할 수 있어요</span>
+                <div className="row-end">
+                  <button className="btn btn--sm btn--line" onClick={() => setRegions([p.office])}>우리 지원청만</button>
+                  <button className="btn btn--sm btn--line" onClick={() => setRegions([p.office, ...near])}><Icon name="plus" size={14} />이웃 지원청 더하기</button>
+                  <button className="btn btn--sm btn--line" onClick={() => setRegions('all')}>경기도 전체</button>
+                </div>
+              </div>
+              <div className="chips">
+                {OFFICES.map((o) => {
+                  const on = regions !== 'all' && regions.includes(o.name);
+                  return <button key={o.name} className={`chip chip--btn ${on ? 'is-on' : ''}`} onClick={() => toggleOffice(o.name)} aria-pressed={on}>{o.short}{o.name === p.office && <span className="mono">우리</span>}{near.includes(o.name) && <span className="mono">이웃</span>}</button>;
+                })}
+              </div>
             </div>
           )}
+
+          {view === 'feed' && <FeedView list={upcoming} nearExtra={regions === 'all' ? nearExtra : []} p={p} onOpen={setOpen} />}
+          {view === 'subject' && <SubjectView list={[...upcoming, ...lockedAll.filter((o) => !upcoming.some((u) => u.id === o.id))]} all={all.filter((o) => o.date >= TODAY && classAccess(o, p) !== 'hidden')} p={p} onOpen={setOpen} />}
+          {view === 'week' && <WeekView list={filtered} onOpen={setOpen} />}
+          {view === 'map' && <MapView list={upcoming} p={p} regions={regions} setRegions={setRegions} onOpen={setOpen} />}
+          {view === 'cal' && <CalView list={filtered} onOpen={setOpen} />}
         </>
       )}
 
       {tab === 'open' && (
         <form className="grid2" onSubmit={submit}>
-          <Panel title="내 수업 공개하기" desc="공개 범위를 고르면 도 단위 또는 지원청 달력에 올라갑니다.">
+          <Panel title="내 수업 공개하기" desc="공개 범위를 고르면 그 범위의 선생님에게만 보여요. 지도안을 함께 올리면 미리 보고 신청할 수 있어요.">
+            <div className="field">
+              <span className="field__label">공개 범위</span>
+              <div className="seg seg--full" role="radiogroup" aria-label="공개 범위">
+                {SCOPES.map((sc) => <button type="button" key={sc} role="radio" aria-checked={f.scope === sc} className={f.scope === sc ? 'is-on' : ''} onClick={() => setF({ ...f, scope: sc, cap: sc === '학교' ? 10 : sc === '지원청' ? 20 : 30 })}>{sc === '지원청' ? `우리 지원청 (${shortOffice(p.office)})` : SCOPE_LABEL[sc]}</button>)}
+              </div>
+              <span className="field__hint">{SCOPE_HELP[f.scope]}</span>
+            </div>
             <div className="row2">
               <Field label="날짜"><input className="input" type="date" value={f.date} min={TODAY} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>
               <Field label="시간"><input className="input" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></Field>
             </div>
             <div className="row2">
-              <Field label="과목"><input className="input" value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })} placeholder="수학" /></Field>
+              <Field label="교과"><select className="input" value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })}>{SUBJECTS.map((x) => <option key={x}>{x}</option>)}</select></Field>
               <Field label="학년·반"><input className="input" value={f.grade} onChange={(e) => setF({ ...f, grade: e.target.value })} placeholder="6학년 3반" /></Field>
             </div>
             <Field label="수업 주제"><input className="input" value={f.topic} onChange={(e) => setF({ ...f, topic: e.target.value })} placeholder="예) 비례식을 생활 문제로 풀기" /></Field>
-            <div className="row2">
-              <Field label="공개 범위"><select className="input" value={f.scope} onChange={(e) => setF({ ...f, scope: e.target.value })}><option value="지원청">지원청 단위 ({ME.office})</option><option value="도">도 단위</option></select></Field>
-              <Field label="참관 정원"><input className="input" type="number" min={1} max={60} value={f.cap} onChange={(e) => setF({ ...f, cap: e.target.value })} /></Field>
+            <div className="field">
+              <span className="field__label">참관 대상 학교급</span>
+              <div className="chips">{BANDS.map((b) => { const on = f.audience.includes(b); return <button type="button" key={b} className={`chip chip--btn ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => setF({ ...f, audience: on ? f.audience.filter((x) => x !== b) : [...f.audience, b] })}>{b}</button>; })}</div>
+              <span className="field__hint">중학교 수업에 고등학교 선생님도 오실 수 있게 여러 개 고를 수 있어요.</span>
             </div>
-            <button className="btn btn--dark" type="submit"><Icon name="video" size={16} />공개수업 등록</button>
+            <Field label="참관 정원"><input className="input" type="number" min={1} max={60} value={f.cap} onChange={(e) => setF({ ...f, cap: e.target.value })} /></Field>
           </Panel>
-          <Panel dark title="공개하면 이렇게 연결돼요">
-            <ul className="flow">
-              <li><span className="mono">01</span>달력과 지도에 바로 표시</li>
-              <li><span className="mono">02</span>참관 신청이 오면 알림</li>
-              <li><span className="mono">03</span>수업 뒤 협의회 자료 공유</li>
-              <li><span className="mono">04</span>성장 여정에 수업 나눔 1회 기록 · 활동 포인트 +50</li>
+          <Panel title="지도안" code="신청 전에 미리 보여요" desc="파일을 올리거나 학습 목표와 수업 흐름을 적어 주세요.">
+            <Field label="지도안 파일" hint="프로토타입이라 파일 이름만 기록하고 실제로 올리지는 않아요."><input className="input" type="file" accept=".hwp,.hwpx,.pdf,.docx" onChange={(e) => setF({ ...f, file: (e.target.files?.[0]?.name ?? '').slice(0, 80) })} /></Field>
+            <Field label="학습 목표"><input className="input" value={f.goal} onChange={(e) => setF({ ...f, goal: e.target.value })} placeholder="예) 비례식을 세워 생활 속 문제를 푼다." /></Field>
+            <Field label="수업 흐름" hint="한 줄에 한 단계씩 적어 주세요."><textarea className="ta" rows={4} value={f.flow} onChange={(e) => setF({ ...f, flow: e.target.value })} placeholder={'도입 · 장보기 영수증으로 질문 만들기\n전개 · 모둠별 비례식 세우기\n정리 · 다른 모둠 풀이 비교'} /></Field>
+            <button className="btn btn--dark" type="submit"><Icon name="video" size={16} />공개수업 등록</button>
+            <ul className="flow flow--light">
+              <li><span className="mono">01</span>고른 범위의 선생님에게 바로 보여요</li>
+              <li><span className="mono">02</span>참관 신청이 오면 알림을 받아요</li>
+              <li><span className="mono">03</span>성장 여정에 수업 나눔 1회 기록 · 활동 포인트 +50</li>
             </ul>
           </Panel>
         </form>
@@ -104,16 +333,10 @@ export function OpenClasses() {
 
       {tab === 'status' && (
         <Panel title="참관 신청 현황" desc="신청 현황은 성장 > 성장 여정에 함께 기록됩니다.">
-          {mine.length ? <ul className="olist">{mine.map((o) => (
-            <li key={o.id}><button onClick={() => setOpen(o)}>
-              <span className={`dot bg-${LEVEL_COLOR[o.level]}`} />
-              <span><b>{o.subject} · {o.topic}</b><small>{fmtDate(o.date)} {o.time} · {o.school} · 신청일 {st.s.classApps[o.id]}</small></span>
-              <Chip tone={o.date < TODAY ? 'ink' : 'green'}>{o.date < TODAY ? '참관 완료' : '참관 예정'}</Chip>
-            </button></li>
-          ))}</ul> : <Empty text="아직 참관 신청이 없어요" />}
+          {mine.length ? <div className="oclist">{mine.map((o) => <OpenClassCard key={o.id} o={o} onOpen={setOpen} />)}</div> : <Empty text="아직 참관 신청이 없어요" />}
           {st.s.myClasses.length > 0 && <>
             <p className="field__label mt">내가 공개한 수업</p>
-            <ul className="olist">{st.s.myClasses.map((o) => <li key={o.id}><button onClick={() => setOpen(o)}><span className="dot bg-orange" /><span><b>{o.subject} · {o.topic}</b><small>{fmtDate(o.date)} {o.time} · {o.scope === '도' ? '도 단위' : '지원청 단위'}</small></span><Chip tone="orange">공개 예정</Chip></button></li>)}</ul>
+            <div className="oclist">{st.s.myClasses.map((o) => <OpenClassCard key={o.id} o={o} onOpen={setOpen} />)}</div>
           </>}
         </Panel>
       )}

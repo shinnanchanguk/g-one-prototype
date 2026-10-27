@@ -6,7 +6,7 @@ import GrowthDesign from './pages/GrowthDesign.jsx';
 import GrowthJourney from './pages/GrowthJourney.jsx';
 import Home from './pages/Home.jsx';
 import { About, Faq, NotFound, Notices, Search } from './pages/Info.jsx';
-import { MaterialDetail, Materials, Rooms, Trainings } from './pages/Learn.jsx';
+import { MaterialDetail, Materials, Modules, Rooms, Trainings } from './pages/Learn.jsx';
 import { Communities, CommunityDetail, OpenClasses, Outcomes } from './pages/Share.jsx';
 import { Mentoring, Mentors, Worries, WorryDetail } from './pages/Together.jsx';
 import { StoreProvider } from './store.jsx';
@@ -37,6 +37,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="growth/design" element={<GrowthDesign />} />
             <Route path="growth/journey" element={<GrowthJourney />} />
             <Route path="learn/trainings" element={<Trainings />} />
+            <Route path="learn/modules" element={<Modules />} />
             <Route path="learn/materials" element={<Materials />} />
             <Route path="learn/materials/:id" element={<MaterialDetail />} />
             <Route path="learn/rooms" element={<Rooms />} />

@@ -1,28 +1,16 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { CommunityCard, MaterialCard, OpenClassModal, RoomRow, TrainingModal, TrainingRow } from '../components/cards.jsx';
-import { GyeonggiMap } from '../components/charts.jsx';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { AreaLadder, MaterialCard, ModuleCard, TrainingCard, trainingState } from '../components/cards.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Panel, Tabs, num, shortDate } from '../components/ui.jsx';
-import { BADGES, COMMUNITIES, LEVELS, MATERIALS, ME, OPEN_CLASSES, ROOMS, TODAY, TRAININGS, WORRIES, WORRY_TAGS } from '../data/seed.js';
+import { AREA_QUESTIONS, AREAS, BADGE_STAGES, BADGES, MATERIALS, ME, MODULES, SCALE, TODAY, TRAININGS, WORRIES, WORRY_TAGS, badgeOf, expertAreas } from '../data/seed.js';
+import { sortByProfile } from '../fit.js';
 import { uid, useStore } from '../store.jsx';
 
-export function BadgeHex({ name, stage, got = true, size = 64 }) {
-  const tone = { 배움: 'blue', 나눔: 'orange', 동행: 'green' }[stage] ?? 'ink';
-  const icon = { 배움: 'book', 나눔: 'heart', 동행: 'users' }[stage] ?? 'award';
-  return (
-    <figure className={`hex ${got ? '' : 'is-locked'}`} title={name}>
-      <svg viewBox="0 0 64 70" width={size} height={size * 70 / 64} aria-hidden>
-        <path d="M32 3 59 18.5v33L32 67 5 51.5v-33Z" className={`hex__bg fill-${got ? tone : 'locked'}`} />
-        <path d="M32 9.5 53.5 22v26L32 60.5 10.5 48V22Z" className="hex__inner" />
-      </svg>
-      <span className="hex__icon"><Icon name={got ? icon : 'lock'} size={size * 0.34} stroke={2} /></span>
-      <figcaption>{name}</figcaption>
-    </figure>
-  );
-}
+// 첫 화면에 들어와 있는 동안 새 글이 올라오는 것처럼 보여 준다(live 표시 글은 잠시 뒤에 나타남).
+const doneOf = (a) => BADGE_STAGES.filter((sg) => badgeOf(a.key, sg.key)?.got).length;
 
-function HomeWorry({ w }) {
+function HomeWorry({ w, fresh }) {
   const st = useStore();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
@@ -40,7 +28,7 @@ function HomeWorry({ w }) {
       <button className="hworry__row" onClick={() => setOpen(!open)} aria-expanded={open}>
         <Avatar name={w.author} size={34} />
         <span className="hworry__main">
-          <span className="hworry__title"><b>{w.title}</b><Chip tone={w.solved ? 'green' : 'orange'}>{w.solved ? '해결됨' : `답변 ${list.length}`}</Chip></span>
+          <span className="hworry__title">{fresh && <Chip tone="orange" solid>방금</Chip>}<b>{w.title}</b><Chip tone={w.solved ? 'green' : 'orange'}>{w.solved ? '해결됨' : `답변 ${list.length}`}</Chip></span>
           <span className="hworry__text">{w.body}</span>
           <span className="hworry__meta"><Icon name="heart" size={13} />{w.likes} <Icon name="message" size={13} />{list.length} <i /> {shortDate(w.date)}</span>
         </span>
@@ -62,139 +50,181 @@ function HomeWorry({ w }) {
   );
 }
 
-export default function Home() {
+function useLive(delay = 12000) {
+  const [arrived, setArrived] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setArrived(true), delay); return () => clearTimeout(t); }, [delay]);
+  return arrived;
+}
+
+function AskForm() {
   const st = useStore();
-  const { s } = st;
-  const [lvl, setLvl] = useState('전체');
-  const [sel, setSel] = useState(null);
-  const [cls, setCls] = useState(null);
-  const [tkind, setTkind] = useState('교육청');
-  const [tOpen, setTOpen] = useState(null);
-  const [rc, setRc] = useState('room');
-  const [msort, setMsort] = useState('좋아요 순');
-  const [wtag, setWtag] = useState(null);
   const [draft, setDraft] = useState('');
-
-  const classes = OPEN_CLASSES.filter((o) => o.date >= TODAY && (lvl === '전체' || o.level === lvl));
-  const trainings = useMemo(() => {
-    if (tkind === '신청한') return TRAININGS.filter((t) => s.applied[t.id]);
-    return TRAININGS.filter((t) => t.kind === tkind);
-  }, [tkind, s.applied]);
-  const appliedN = TRAININGS.filter((t) => s.applied[t.id]).length;
-  const allMats = [...s.myMaterials, ...MATERIALS];
-  const mats = [...allMats].sort((a, b) => (msort === '좋아요 순' ? b.likes - a.likes : msort === '최신 등록순' ? b.date.localeCompare(a.date) : b.views - a.views)).slice(0, 4);
-  const worries = [...s.myWorries, ...WORRIES].filter((w) => !wtag || w.tag === wtag).slice(0, 3);
-  const comms = [...s.myComms, ...COMMUNITIES];
-  const badgeGot = BADGES.filter((b) => b.got).length;
-
   const post = (e) => {
     e.preventDefault();
     if (!draft.trim()) return;
-    const w = { id: uid('w'), tag: wtag ?? '기타', title: draft.trim().slice(0, 40), body: draft.trim(), author: ME.name, date: TODAY, likes: 0, solved: false, mine: true, comments: [] };
+    const w = { id: uid('w'), tag: '기타', title: draft.trim().slice(0, 40), body: draft.trim(), author: ME.name, date: TODAY, likes: 0, solved: false, mine: true, comments: [] };
     st.patch((x) => ({ myWorries: [w, ...x.myWorries] }));
     st.award('활동', 5, '고민 남기기');
     setDraft('');
     st.toast('고민을 남겼어요 · 동료 선생님들의 답변을 기다려 보세요');
   };
+  return (
+    <form className="hp__ask" onSubmit={post}>
+      <Avatar name={ME.name} size={34} />
+      <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="교육 현장의 고민을 남겨 주세요." rows={2} aria-label="고민 입력" />
+      <button className="btn btn--green btn--sm" type="submit">등록</button>
+    </form>
+  );
+}
 
+function Portfolio() {
+  const st = useStore();
+  const got = BADGES.filter((b) => b.got).length;
+  const experts = expertAreas();
+  const next = [...AREAS].filter((a) => doneOf(a) < 3).sort((a, b) => doneOf(b) - doneOf(a))[0];
+  return (
+    <Panel className="hp" tone="green" icon="award" title="나의 포트폴리오" code="성장 · 1.2" more="/growth/journey">
+      <div className="pf__me">
+        <Avatar name={ME.name} size={52} />
+        <div><strong>{ME.name} 선생님</strong><span>{ME.school} · {ME.role}</span></div>
+      </div>
+      <div className="pf__nums">
+        <div><b>{num(st.totalPoints)}P</b><span>누적 포인트</span></div>
+        <div><b>{got}개</b><span>받은 뱃지</span></div>
+        <div><b>{experts.length}개</b><span>전문가 영역</span></div>
+      </div>
+      {experts.map((a) => <p key={a.key} className="pf__expert"><Icon name="shield" size={15} />{a.name} 전문가</p>)}
+      <p className="mono">전문가까지 가장 가까운 영역</p>
+      <AreaLadder area={next} compact />
+      <Link to="/growth/journey" className="btn btn--green btn--block btn--sm">내 성장 여정 자세히 <Icon name="arrow" size={15} /></Link>
+    </Panel>
+  );
+}
+
+function HomeA() {
+  const st = useStore();
+  const { s } = st;
+  const live = useLive();
+  const [seen, setSeen] = useState(false);
+  const [msort, setMsort] = useState('나에게 맞는 순');
+  const [wtag, setWtag] = useState(null);
+  const shown = (x) => !x.live || (live && seen);
+  const freshW = WORRIES.filter((w) => w.live && shown(w));
+  const freshM = MATERIALS.filter((m) => m.live && shown(m));
+  const worries = [...freshW, ...s.myWorries, ...WORRIES.filter((w) => !w.live)].filter((w) => !wtag || w.tag === wtag).slice(0, 3);
+  const allMats = [...s.myMaterials, ...MATERIALS.filter((m) => !m.live)];
+  const sorted = msort === '최신 등록순' ? [...allMats].sort((a, b) => b.date.localeCompare(a.date)) : msort === '좋아요 순' ? [...allMats].sort((a, b) => b.likes - a.likes) : sortByProfile([...allMats].sort((a, b) => b.likes - a.likes), s.profile);
+  const mats = [...freshM, ...sorted].slice(0, 3);
+  return (
+    <div className="home__grid home__grid--a">
+      <Portfolio />
+      <Panel className="hp" tone="purple" icon="message" title="고민 남기기" code="동행 · 4.1" more="/together/worries">
+        <AskForm />
+        <div className="chips chips--scroll">
+          {WORRY_TAGS.slice(0, 5).map((t) => <button key={t} className={`chip chip--btn ${wtag === t ? 'is-on' : ''}`} onClick={() => setWtag(wtag === t ? null : t)}>#{t}</button>)}
+        </div>
+        {live && !seen && <button className="newpill" onClick={() => setSeen(true)}><Icon name="refresh" size={14} />새 고민 1개 · 새 자료 1개가 올라왔어요</button>}
+        <div className="hworries">{worries.map((w) => <HomeWorry key={w.id} w={w} fresh={!!w.live} />)}</div>
+      </Panel>
+      <Panel className="hp" tone="blue" icon="layers" title="교육자료 추천" code="배움 · 2.3" more="/learn/materials">
+        <Tabs size="sm" value={msort} onChange={setMsort} items={['나에게 맞는 순', '좋아요 순', '최신 등록순']} />
+        <div className="mlist">{mats.map((m) => <MaterialCard key={m.id} m={m} compact />)}</div>
+      </Panel>
+    </div>
+  );
+}
+
+const GROWTH_CATS = [
+  ['수업·평가', '수업', 'teach'], ['생활교육', '생활지도', 'life'], ['디지털·AI', 'AI 디지털 도구', 'change'],
+  ['정신건강·자기돌봄', '마음 돌보기', 'self'], ['업무 역량', '업무 효율화', 'pro'], ['진로교육', '진로', 'career'], ['교육과정', '교육과정', 'curr'],
+];
+
+function QuickDiag({ areaKey }) {
+  const st = useStore();
+  const area = AREAS.find((a) => a.key === areaKey);
+  const mine = st.s.quickDiag[areaKey];
+  const n = Object.keys(st.s.quickDiag).length;
+  const answer = (v) => {
+    st.patch((s) => ({ quickDiag: { ...s.quickDiag, [areaKey]: v } }));
+    st.toast(`${area.name} 영역 답을 성장 설계에 담았어요 · 10개 중 ${mine ? n : n + 1}개`);
+  };
+  return (
+    <div className="qdiag">
+      <div className="qdiag__q">
+        <span className="mono">한 문항 진단 · {area.name}</span>
+        <p>{AREA_QUESTIONS[areaKey]}</p>
+      </div>
+      <div className="diag__scale" role="radiogroup" aria-label={`${area.name} 진단`}>
+        {SCALE.map((lbl, v) => (
+          <button key={v} role="radio" aria-checked={mine === v + 1} className={mine === v + 1 ? 'is-on' : ''} onClick={() => answer(v + 1)} title={lbl}>
+            <b>{v + 1}</b><span>{lbl.slice(2)}</span>
+          </button>
+        ))}
+      </div>
+      <p className="qdiag__foot">10개 영역 중 {n}개 답했어요. 처음부터 열 문항을 다 풀지 않아도 돼요. <Link to="/growth/design" className="linkbtn">성장 설계에서 이어 보기</Link></p>
+    </div>
+  );
+}
+
+function HomeB() {
+  const st = useStore();
+  const { s } = st;
+  const p = s.profile;
+  const [cat, setCat] = useState(GROWTH_CATS[0][0]);
+  const [wsort, setWsort] = useState('공감 많은 순');
+  const areaKey = GROWTH_CATS.find((c) => c[0] === cat)[2];
+  const trainings = sortByProfile(TRAININGS.filter((t) => t.cat === cat && trainingState(t, s) !== 'closed'), p).slice(0, 2);
+  const canSee = (m) => m.mine || m.share === '전체' || (m.share === '우리 학교' && m.school === p.school);
+  const mods = sortByProfile([...s.myModules, ...MODULES].filter((m) => m.cat === cat && canSee(m)), p).slice(0, 1);
+  const allW = [...s.myWorries, ...WORRIES];
+  const worries = (wsort === '공감 많은 순' ? [...allW].sort((a, b) => b.likes - a.likes) : allW).slice(0, 4);
+  return (
+    <div className="homeb">
+      <section className="homeb__main">
+        <div className="homeb__head">
+          <div><span className="mono c-blue">배움 · 오늘 선생님께 필요한 성장 콘텐츠</span><h2>무엇을 키워 볼까요?</h2></div>
+          <span className="mono">{p.band}{p.subject ? ` · ${p.subject}` : ''} 선생님께 맞는 것부터</span>
+        </div>
+        <div className="gcats" role="tablist" aria-label="성장 분야">
+          {GROWTH_CATS.map(([c, label]) => (
+            <button key={c} role="tab" aria-selected={cat === c} className={`gcat ${cat === c ? 'is-on' : ''}`} onClick={() => setCat(c)}>
+              <Icon name={{ '수업·평가': 'target', 생활교육: 'heart', '디지털·AI': 'spark', '정신건강·자기돌봄': 'leaf', '업무 역량': 'file', 진로교육: 'compass', 교육과정: 'layers' }[c]} size={18} />
+              {label}
+              <span className="mono">{TRAININGS.filter((t) => t.cat === c).length + MODULES.filter((m) => m.cat === c).length}</span>
+            </button>
+          ))}
+        </div>
+        <QuickDiag areaKey={areaKey} />
+        <div className="tcards">{trainings.map((t) => <TrainingCard key={t.id} t={t} compact />)}</div>
+        {mods.map((m) => <ModuleCard key={m.id} m={m} />)}
+        <div className="row-end"><Link to="/learn/trainings" className="more">연수 더 보기 <Icon name="right" size={13} /></Link><Link to="/learn/modules" className="more">배움 모듈 더 보기 <Icon name="right" size={13} /></Link></div>
+      </section>
+      <Panel className="hp homeb__side" tone="purple" icon="message" title="공감 많은 고민" code="동행 · 4.1" more="/together/worries">
+        <AskForm />
+        <Tabs size="sm" value={wsort} onChange={setWsort} items={['공감 많은 순', '최신순']} />
+        <div className="hworries">{worries.map((w) => <HomeWorry key={w.id} w={w} />)}</div>
+      </Panel>
+    </div>
+  );
+}
+
+export default function Home() {
+  const st = useStore();
+  const [sp, setSp] = useSearchParams();
+  const q = sp.get('home');
+  const v = q === 'a' || q === 'b' ? q : st.s.homeVersion;
+  const pick = (x) => { st.patch(() => ({ homeVersion: x })); setSp({ home: x }, { replace: true }); };
   return (
     <div className="container home">
-      <div className="home__grid">
-        <Panel className="hp hp--map" tone="pink" icon="calendar" title="수업 공개 현황" code="나눔 · 3.1" desc="공개수업 정보를 지도로 한눈에 확인하세요." more="/share/classes">
-          <Tabs size="sm" value={lvl} onChange={(v) => { setLvl(v); setSel(null); }} items={['전체', ...LEVELS]} />
-          <GyeonggiMap compact items={classes} selected={sel} onSelect={setSel} onOpen={setCls} />
-          <p className="hp__foot mono">이번 달 이후 공개수업 {classes.length}건</p>
-        </Panel>
-
-        <Panel className="hp" tone="blue" icon="school" title="교육청/지원청 연수 신청" code="배움 · 2.1" desc="교육청 · 지원청 연수 정보를 확인하고 신청하세요." more="/learn/trainings">
-          <Tabs size="sm" value={tkind} onChange={setTkind} items={[
-            { value: '교육청', label: `교육청 연수 (${TRAININGS.filter((t) => t.kind === '교육청').length})` },
-            { value: '지원청', label: `지원청 연수 (${TRAININGS.filter((t) => t.kind === '지원청').length})` },
-            { value: '신청한', label: `신청한 연수 (${appliedN})` },
-          ]} />
-          <div className="tlist">
-            {trainings.slice(0, 5).map((t) => <TrainingRow key={t.id} t={t} onOpen={setTOpen} />)}
-            {!trainings.length && <p className="empty-line">아직 신청한 연수가 없어요.</p>}
-          </div>
-        </Panel>
-
-        <Panel className="hp" tone="green" icon="award" title="포트폴리오" code="성장 · 1.2" desc="나의 수업과 성장을 기록하고 뱃지와 포인트를 확인하세요." more="/growth/journey">
-          <div className="pf">
-            <div className="pf__me">
-              <Avatar name={ME.name} size={64} />
-              <div>
-                <strong>{ME.name} 선생님</strong>
-                <span>{ME.school} · {ME.role}</span>
-                <Link to="/growth/journey" className="chip chip--ink"><Icon name="edit" size={12} /> 프로필 수정</Link>
-              </div>
-            </div>
-            <div className="pf__nums">
-              <div><Icon name="star" size={20} className="c-yellow" /><b>{num(st.totalPoints)}P</b><span>누적 포인트</span></div>
-              <div><Icon name="award" size={20} className="c-orange" /><b>{badgeGot}개</b><span>획득 뱃지</span></div>
-            </div>
-          </div>
-          <div className="pf__badges">
-            {['수업 나눔', 'AI 활용', '공동체 활동', '자료 공유', '멘토링'].map((n) => { const b = BADGES.find((x) => x.name === n); return <BadgeHex key={n} name={n} stage={b.stage} got={b.got} size={52} />; })}
-          </div>
-          <div className="pf__recent">
-            <p><b>최근 활동 요약</b> <span className="mono">최근 3개월</span></p>
-            <ul>
-              <li><Icon name="book" size={16} className="c-blue" /><span>수업기록</span><b>24건</b></li>
-              <li><Icon name="upload" size={16} className="c-yellow" /><span>자료 업로드</span><b>{18 + s.myMaterials.length}건</b></li>
-              <li><Icon name="users" size={16} className="c-purple" /><span>공동체 활동</span><b>{3 + Object.keys(s.joinedComms).length + s.myComms.length}건</b></li>
-              <li><Icon name="heart" size={16} className="c-pink" /><span>좋아요 받은 수</span><b>32건</b></li>
-            </ul>
-          </div>
-          <Link to="/growth/journey" className="btn btn--green btn--block">내 포트폴리오 보러가기 <Icon name="arrow" size={16} /></Link>
-        </Panel>
-
-        <Panel className="hp" tone="orange" icon="users" title="학습방/공동체 통합" code="배움 2.3 · 나눔 3.2" desc="학습방과 공동체 활동을 함께 확인하세요." more={rc === 'room' ? '/learn/rooms' : '/share/communities'}>
-          <div className="toggle2" role="tablist">
-            <button role="tab" aria-selected={rc === 'room'} className={rc === 'room' ? 'is-on' : ''} onClick={() => setRc('room')}>학습방 목록 ({ROOMS.filter((r) => !r.done).length})</button>
-            <button role="tab" aria-selected={rc === 'comm'} className={rc === 'comm' ? 'is-on' : ''} onClick={() => setRc('comm')}>공동체 목록 ({comms.length})</button>
-          </div>
-          <div className="rlist">
-            {rc === 'room'
-              ? ROOMS.filter((r) => !r.done).slice(0, 4).map((r) => <RoomRow key={r.id} r={r} />)
-              : comms.slice(0, 3).map((c) => <CommunityCard key={c.id} c={c} compact />)}
-          </div>
-        </Panel>
-
-        <Panel className="hp" tone="blue" icon="layers" title="교육 자료 추천" code="배움 · 2.2" desc="선생님들이 추천한 교육자료를 만나보세요." more="/learn/materials">
-          <Tabs size="sm" value={msort} onChange={setMsort} items={['좋아요 순', '최신 등록순', '조회수 순']} />
-          <div className="mlist">{mats.map((m) => <MaterialCard key={m.id} m={m} compact />)}</div>
-        </Panel>
-
-        <Panel className="hp" tone="purple" icon="message" title="고민 남기기" code="동행 · 4.1" desc="교육 현장의 고민을 남기고, 함께 해결해요." more="/together/worries">
-          <form className="hp__ask" onSubmit={post}>
-            <Avatar name={ME.name} size={36} />
-            <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={'교육 현장의 고민을 남겨주세요.\n선생님들의 따뜻한 답변이 큰 힘이 됩니다.'} rows={2} aria-label="고민 입력" />
-            <button className="btn btn--green btn--sm" type="submit">등록하기</button>
-          </form>
-          <div className="chips chips--scroll">
-            {WORRY_TAGS.slice(0, 5).map((t) => <button key={t} className={`chip chip--btn ${wtag === t ? 'is-on' : ''}`} onClick={() => setWtag(wtag === t ? null : t)}>#{t}</button>)}
-          </div>
-          <div className="hworries">{worries.map((w) => <HomeWorry key={w.id} w={w} />)}</div>
-        </Panel>
+      <div className="variantbar">
+        <span className="variantbar__k"><Icon name="layers" size={15} />첫 화면 시안</span>
+        <div className="seg" role="tablist" aria-label="첫 화면 시안">
+          <button role="tab" aria-selected={v === 'a'} className={v === 'a' ? 'is-on' : ''} onClick={() => pick('a')}>A 간결형</button>
+          <button role="tab" aria-selected={v === 'b'} className={v === 'b' ? 'is-on' : ''} onClick={() => pick('b')}>B 배움+고민형</button>
+        </div>
+        <span className="variantbar__note">{v === 'a' ? '자주 바뀌는 포트폴리오 · 고민 · 교육자료 세 칸만 앞에 둔 안' : '분야를 고르면 맞춤 배움과 한 문항 진단이 나오고, 옆에 공감 많은 고민이 보이는 안'}</span>
       </div>
-
-      <section className="vision">
-        <div className="vision__copy">
-          <span className="mono c-orange">VISION · 2026</span>
-          <h2>교사 주도의 자발적 성찰과 동행으로<br />함께 성장하는 경기교육 공동체</h2>
-          <div className="vision__strip">
-            {[['성장', '성찰로 설계하는 나의 성장', '/growth/design', 'green'], ['배움', '맞춤 연수와 모듈', '/learn/trainings', 'blue'], ['나눔', '수업과 실천을 나누는 문화', '/share/classes', 'pink'], ['동행', '누구나 멘토이자 멘티', '/together/mentors', 'purple']].map(([k, d, to, c]) => (
-              <Link key={k} to={to} className="vision__item"><span className={`mono c-${c}`}>{k}</span><b>{d}</b><Icon name="arrow" size={16} /></Link>
-            ))}
-          </div>
-        </div>
-        <div className="vision__art" aria-hidden>
-          <span className="pill pill-1" /><span className="pill pill-2" /><span className="pill pill-3" /><span className="pill pill-4" /><span className="pill pill-5"><span className="checker" /></span>
-        </div>
-      </section>
-
-      <OpenClassModal o={cls} onClose={() => setCls(null)} />
-      <TrainingModal t={tOpen} onClose={() => setTOpen(null)} />
+      {v === 'a' ? <HomeA /> : <HomeB />}
     </div>
   );
 }

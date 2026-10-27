@@ -1,0 +1,72 @@
+// 내 정보(학교급 묶음·교과·지원청)에 맞춰 목록을 거르고 정렬한다. 화면 공용.
+import { CITIES } from './data/gyeonggiMap.js';
+import { BANDS, ME, OFFICES, SUBJECTS, bandOf } from './data/seed.js';
+
+export const DEFAULT_PROFILE = { band: '초등', subject: '', office: ME.office, school: ME.school, city: '수원시', sortBy: '학교급', set: false };
+
+export function cleanProfile(p) {
+  const d = DEFAULT_PROFILE;
+  if (!p || typeof p !== 'object') return { ...d };
+  const office = OFFICES.some((o) => o.name === p.office) ? p.office : d.office;
+  return {
+    band: BANDS.includes(p.band) ? p.band : d.band,
+    subject: SUBJECTS.includes(p.subject) ? p.subject : '',
+    office,
+    school: d.school,
+    city: OFFICES.find((o) => o.name === office).cities.includes(p.city) ? p.city : OFFICES.find((o) => o.name === office).cities[0],
+    sortBy: p.sortBy === '교과' ? '교과' : '학교급',
+    set: p.set === true,
+  };
+}
+
+const bandMatch = (item, band) => {
+  if (item.audience && Array.isArray(item.audience)) return item.audience.includes(band);
+  return item.level === '전체' || bandOf(item.level) === band;
+};
+const subjectMatch = (item, subject) => !!subject && (item.subject === subject || (typeof item.audience === 'string' && item.audience.includes(subject)));
+
+// 학교급이 맞는 것, 교과가 맞는 것을 앞으로. 같은 점수면 원래 순서(날짜 등)를 지킨다.
+export function sortByProfile(list, p, mode = p.sortBy) {
+  const score = (it) => {
+    const b = bandMatch(it, p.band) ? 1 : 0;
+    const s = subjectMatch(it, p.subject) ? 1 : 0;
+    return mode === '교과' ? s * 2 + b : b * 2 + s;
+  };
+  return list.map((it, i) => [it, score(it), i]).sort((a, b) => b[1] - a[1] || a[2] - b[2]).map(([it]) => it);
+}
+export const fitsBand = bandMatch;
+export const fitsSubject = subjectMatch;
+
+// 공개수업을 볼 수 있는지·신청할 수 있는지
+export function classAccess(o, p) {
+  if (o.scope === '학교') return o.school === p.school ? 'ok' : 'hidden';
+  if (o.scope === '지원청') return o.office === p.office ? 'ok' : 'other';
+  return 'ok';
+}
+export const SCOPE_LABEL = { 학교: '우리 학교', 지원청: '지원청 단위', 도: '도 단위' };
+export const SCOPE_HELP = {
+  학교: '같은 학교 선생님에게만 보여요. 동료장학처럼 부담 없이 열 수 있어요.',
+  지원청: '우리 지원청 선생님이 보고 신청할 수 있어요.',
+  도: '경기도 모든 선생님이 보고 신청할 수 있어요.',
+};
+
+// 지도 좌표로 잰 시·군 중심 사이 거리(가로 800칸이 약 150km)
+const XY = Object.fromEntries(CITIES.map((c) => [c.name, [c.cx, c.cy]]));
+const KM = 0.19;
+export const distKm = (a, b) => {
+  const p = XY[a], q = XY[b];
+  if (!p || !q) return 0;
+  return Math.round(Math.hypot(p[0] - q[0], p[1] - q[1]) * KM);
+};
+const officeXY = (name) => {
+  const o = OFFICES.find((x) => x.name === name);
+  const pts = o.cities.map((c) => XY[c]).filter(Boolean);
+  return [pts.reduce((a, q) => a + q[0], 0) / pts.length, pts.reduce((a, q) => a + q[1], 0) / pts.length];
+};
+export function neighborOffices(office, n = 4) {
+  const [x, y] = officeXY(office);
+  return OFFICES.filter((o) => o.name !== office)
+    .map((o) => { const [a, b] = officeXY(o.name); return [o.name, Math.hypot(a - x, b - y)]; })
+    .sort((a, b) => a[1] - b[1]).slice(0, n).map(([nm]) => nm);
+}
+export const shortOffice = (name) => name.replace('교육지원청', '');

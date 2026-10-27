@@ -4,9 +4,10 @@ import { Radar, radarColor } from '../components/charts.jsx';
 import Icon from '../components/Icon.jsx';
 import { Chip, PageHead, Panel } from '../components/ui.jsx';
 import { AREA_QUESTIONS, AREAS, GROWTH_TYPES, MENTORS, MODULES, ROOMS, SCALE, TODAY, TRAININGS } from '../data/seed.js';
+import { trainingState } from '../components/cards.jsx';
 import { uid, useStore } from '../store.jsx';
 
-export const AREA_CAT = { curr: '교육과정', teach: '수업·평가', assess: '수업·평가', life: '생활교육', career: '진로교육', digital: '디지털·AI', class: '학급경영', collab: '수업·평가', comm: '학급경영', care: '정신건강·자기돌봄' };
+export const AREA_CAT = Object.fromEntries(AREAS.map((a) => [a.key, a.cat]));
 const STEPS = ['고민 입력', '핵심 활동 진단', 'AI 성장 키워드', '도움 찾기', '새 성장 목표'];
 const SAMPLE = '수학 시간에 발표하는 아이들이 늘 같아요. 조용한 아이들도 스스로 질문하고 생각을 나누는 수업을 만들고 싶습니다. 요즘은 업무에 지쳐서 수업 준비할 여유도 부족해요.';
 
@@ -26,7 +27,8 @@ export default function GrowthDesign() {
   const [step, setStep] = useState(0);
   const [text, setText] = useState('');
   const [share, setShare] = useState(true);
-  const [scores, setScores] = useState({});
+  const [scores, setScores] = useState(() => ({ ...st.s.quickDiag }));
+  const quickN = Object.keys(st.s.quickDiag).filter((k) => AREAS.some((a) => a.key === k)).length;
   const [thinking, setThinking] = useState(false);
   const [compare, setCompare] = useState(true);
   const [need, setNeed] = useState('');
@@ -51,15 +53,16 @@ export default function GrowthDesign() {
       const cat = AREA_CAT[res.low[0].key];
       setTasks([
         { t: `${TRAININGS.find((x) => x.cat === cat)?.title ?? '관련 연수'} 듣기`, kind: '배움', done: false },
-        { t: '수업에서 4주 동안 실천하고 기록하기', kind: '실천', done: false },
+        { t: '수업에서 4주 동안 실천하고 기록하기', kind: '배움', done: false },
         { t: '실천 성찰 글을 공동체에 나누기', kind: '나눔', done: false },
+        { t: '같은 고민을 가진 동료와 멘토링으로 함께하기', kind: '동행', done: false },
       ]);
     }
   }, [step, res, goal]);
 
   const recs = res ? res.low.map((a) => ({
     area: a,
-    trainings: TRAININGS.filter((t) => t.cat === AREA_CAT[a.key] && t.status !== '마감').slice(0, 2),
+    trainings: TRAININGS.filter((t) => t.cat === AREA_CAT[a.key] && trainingState(t, st.s) !== 'closed').slice(0, 2),
     modules: MODULES.filter((m) => m.cat === AREA_CAT[a.key]).slice(0, 1),
     rooms: ROOMS.filter((r) => r.cat === AREA_CAT[a.key] && !r.done).slice(0, 1),
     mentor: MENTORS.find((m) => m.fields.includes(AREA_CAT[a.key])),
@@ -105,6 +108,7 @@ export default function GrowthDesign() {
 
       {step === 1 && (
         <Panel title="핵심 교육활동 진단" code="STEP 2" desc="10개 영역을 1~4점으로 골라 주세요. 지금 모습 그대로가 좋아요.">
+          {quickN > 0 && <p className="note"><Icon name="check" size={15} /> 첫 화면에서 답한 {quickN}개 영역은 미리 채워 두었어요. 남은 영역만 골라 주세요.</p>}
           <div className="diag">
             {AREAS.map((a, i) => (
               <div key={a.key} className="diag__q">
@@ -168,8 +172,8 @@ export default function GrowthDesign() {
               <div key={r.area.key} className="rec">
                 <p className="rec__head"><span className="mono">함께 키울 영역</span><b>{r.area.name}</b><Chip tone="orange">{scores[r.area.key]}점</Chip></p>
                 <ul>
-                  {r.trainings.map((t) => <li key={t.id}><Icon name="school" size={15} className="c-blue" /><Link to={`/learn/trainings?q=${encodeURIComponent(t.title)}`}>{t.title}</Link><span className="mono">연수 · {t.hours}시간</span></li>)}
-                  {r.modules.map((m) => <li key={m.id}><Icon name="layers" size={15} className="c-purple" /><Link to="/learn/trainings?tab=module">{m.title}</Link><span className="mono">모듈</span></li>)}
+                  {r.trainings.map((t) => <li key={t.id}><Icon name="school" size={15} className="c-blue" /><Link to={`/learn/trainings?q=${encodeURIComponent(t.title)}`}>{t.title}</Link><span className="mono">{t.type}연수 · {t.hours ? `${t.hours}시간` : '인정시간 없음'}</span></li>)}
+                  {r.modules.map((m) => <li key={m.id}><Icon name="layers" size={15} className="c-purple" /><Link to="/learn/modules">{m.title}</Link><span className="mono">배움 모듈</span></li>)}
                   {r.rooms.map((m) => <li key={m.id}><Icon name="book" size={15} className="c-orange" /><Link to="/learn/rooms">{m.title}</Link><span className="mono">학습방</span></li>)}
                   {r.mentor && <li><Icon name="users" size={15} className="c-green" /><Link to={`/together/mentors?m=${r.mentor.id}`}>{r.mentor.name} 멘토 ({r.mentor.verified ?? r.mentor.role})</Link><span className="mono">멘토</span></li>}
                 </ul>
@@ -181,16 +185,16 @@ export default function GrowthDesign() {
       )}
 
       {step === 4 && res && (
-        <Panel title="새로운 성장 목표 세우기" code="STEP 5" desc="목표별로 배움·실천·나눔 과제를 연결하면 나의 성장 여정에 쌓여요.">
+        <Panel title="새로운 성장 목표 세우기" code="STEP 5" desc="목표별로 배움·나눔·동행 과제를 연결하면 나의 성장 여정에 쌓여요.">
           <label className="field"><span className="field__label">성장 목표</span><input className="input" value={goal} onChange={(e) => setGoal(e.target.value)} /></label>
           <p className="field__label">실천 과제</p>
           <ul className="tasks">
             {tasks.map((t, i) => (
-              <li key={i}><Chip tone={{ 배움: 'blue', 실천: 'green', 나눔: 'orange', 성찰: 'purple', 동행: 'purple' }[t.kind]}>{t.kind}</Chip><span>{t.t}</span>
+              <li key={i}><Chip tone={{ 배움: 'blue', 나눔: 'orange', 동행: 'green' }[t.kind]}>{t.kind}</Chip><span>{t.t}</span>
                 <button className="iconbtn iconbtn--sm" onClick={() => setTasks(tasks.filter((_, j) => j !== i))} aria-label="과제 삭제"><Icon name="x" size={14} /></button></li>
             ))}
           </ul>
-          <form className="inline-form" onSubmit={(e) => { e.preventDefault(); if (newTask.trim()) { setTasks([...tasks, { t: newTask.trim(), kind: '성찰', done: false }]); setNewTask(''); } }}>
+          <form className="inline-form" onSubmit={(e) => { e.preventDefault(); if (newTask.trim()) { setTasks([...tasks, { t: newTask.trim(), kind: '배움', done: false }]); setNewTask(''); } }}>
             <input value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="과제 더하기 (예: 학생 질문 수 기록하기)" aria-label="과제 추가" />
             <button className="btn btn--sm btn--line" type="submit"><Icon name="plus" size={14} />더하기</button>
           </form>

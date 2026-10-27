@@ -53,20 +53,21 @@ function spread(items, gap) {
   });
 }
 
-export function GyeonggiMap({ items, onOpen, compact, selected, onSelect }) {
-  const [zoom, setZoom] = useState(1);
+export function GyeonggiMap({ items, onOpen, selected, onSelect, regionCities, homeCity, onCity, focusCity }) {
+  const [zoom, setZoom] = useState(focusCity ? 2 : 1);
   const vw = MAP_W / zoom, vh = MAP_H / zoom;
-  const ms = 15 / Math.sqrt(zoom) * (compact ? 1.5 : 1);
+  const ms = 15 / Math.sqrt(zoom);
   const pts = useMemo(() => spread(items, ms * 1.3), [items, ms]);
   const sel = pts.find((p) => p.id === selected);
   const ordered = sel ? [...pts.filter((p) => p !== sel), sel] : pts;
-  const fx = sel ? Math.min(Math.max(sel.x - vw / 2, 0), MAP_W - vw) : (MAP_W - vw) / 2;
-  const fy = sel ? Math.min(Math.max(sel.y - vh / 2, 0), MAP_H - vh) : (MAP_H - vh) / 2;
+  const focus = sel ?? (focusCity && cityByName[focusCity] ? { x: cityByName[focusCity].cx, y: cityByName[focusCity].cy } : null);
+  const fx = focus ? Math.min(Math.max(focus.x - vw / 2, 0), MAP_W - vw) : (MAP_W - vw) / 2;
+  const fy = focus ? Math.min(Math.max(focus.y - vh / 2, 0), MAP_H - vh) : (MAP_H - vh) / 2;
   return (
-    <div className={`gmap ${compact ? 'gmap--compact' : ''}`}>
+    <div className="gmap">
       <svg viewBox={`${fx} ${fy} ${vw} ${vh}`} role="img" aria-label="경기도 공개수업 지도" onClick={() => onSelect?.(null)}>
-        {CITIES.map((c) => <path key={c.name} d={c.d} className="gmap__city" />)}
-        {CITIES.map((c) => <text key={c.name} x={c.cx} y={c.cy} className="gmap__label" style={{ fontSize: (compact ? 22 : 15) / Math.sqrt(zoom) }}>{c.name.replace(/(시|군)$/, '')}</text>)}
+        {CITIES.map((c) => <path key={c.name} d={c.d} className={`gmap__city ${regionCities?.has(c.name) ? 'is-region' : ''} ${c.name === homeCity ? 'is-home' : ''} ${onCity ? 'is-pickable' : ''}`} onClick={onCity ? (e) => { e.stopPropagation(); onCity(c.name); } : undefined}><title>{c.name}</title></path>)}
+        {CITIES.map((c) => <text key={c.name} x={c.cx} y={c.cy} className="gmap__label" style={{ fontSize: 15 / Math.sqrt(zoom) }}>{c.name.replace(/(시|군)$/, '')}</text>)}
         {ordered.map((p) => (
           <g key={p.id} transform={`translate(${p.x},${p.y})`} className={`gmap__pin pin--${LEVEL_COLOR[p.level]} ${p.id === selected ? 'is-sel' : ''}`}
             onClick={(e) => { e.stopPropagation(); onSelect?.(p.id); }} role="button" tabIndex={0} aria-label={`${p.school} ${p.subject} 공개수업`}
@@ -100,7 +101,8 @@ export function GyeonggiMap({ items, onOpen, compact, selected, onSelect }) {
 }
 
 // ── 월간 달력 ─────────────────────────────────────────
-export function MonthCalendar({ year, month, items, onOpen, onMove }) {
+// 칸에는 두 건까지만 보이고 나머지는 +n. 날짜를 누르면 onPick 으로 그날을 고른다.
+export function MonthCalendar({ year, month, items, onOpen, onMove, selected, onPick, max = 2 }) {
   const first = new Date(year, month - 1, 1).getDay();
   const days = new Date(year, month, 0).getDate();
   const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
@@ -117,14 +119,18 @@ export function MonthCalendar({ year, month, items, onOpen, onMove }) {
         {'일월화수목금토'.split('').map((w, i) => <div key={w} className={`cal__dow ${i === 0 ? 'c-orange' : i === 6 ? 'c-blue' : ''}`}>{w}</div>)}
         {cells.map((d, i) => {
           const list = d ? items.filter((it) => it.date === key(d)) : [];
+          const k = d ? key(d) : '';
           return (
-            <div key={i} className={`cal__cell ${d ? '' : 'is-blank'} ${d && key(d) === '2026-10-26' ? 'is-today' : ''}`}>
-              {d && <span className="cal__day">{d}</span>}
-              {list.map((it) => (
-                <button key={it.id} className={`cal__ev ev--${it.scope === '도' ? 'do' : 'office'}`} onClick={() => onOpen(it)} title={`${it.school} ${it.topic}`}>
+            <div key={i} className={`cal__cell ${d ? '' : 'is-blank'} ${d && k === '2026-10-26' ? 'is-today' : ''} ${d && k === selected ? 'is-sel' : ''}`}>
+              {d && (onPick
+                ? <button className="cal__day cal__day--btn" onClick={() => onPick(k)} aria-label={`${month}월 ${d}일 공개수업 ${list.length}건 보기`}>{d}{list.length > 0 && <span className="cal__n">{list.length}</span>}</button>
+                : <span className="cal__day">{d}</span>)}
+              {list.slice(0, max).map((it) => (
+                <button key={it.id} className={`cal__ev ev--${{ 도: 'do', 지원청: 'office', 학교: 'school' }[it.scope]} ${it.locked ? 'is-locked' : ''}`} onClick={() => onOpen(it)} title={`${it.school} ${it.topic}`}>
                   <span className="cal__ev-subj">{it.subject}</span> <span className="cal__ev-school">{it.school.replace(/등학교|학교/, '')}</span>
                 </button>
               ))}
+              {list.length > max && <button className="cal__more" onClick={() => (onPick ? onPick(k) : onOpen(list[max]))}>+{list.length - max}건</button>}
             </div>
           );
         })}

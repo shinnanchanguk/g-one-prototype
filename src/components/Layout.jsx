@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { ME, NOTIFS } from '../data/seed.js';
 import { useStore } from '../store.jsx';
 import Icon from './Icon.jsx';
+import { ProfileChip, ProfileModal } from './Profile.jsx';
 import { Avatar, num } from './ui.jsx';
 
 export const MENU = [
@@ -11,9 +12,10 @@ export const MENU = [
     { to: '/growth/journey', code: '1.2', label: '성장 여정', desc: '포트폴리오 · 뱃지 앨범' },
   ] },
   { key: 'learn', label: '배움', icon: 'book', tone: 'blue', sub: '함께 배우는 수업 이야기', items: [
-    { to: '/learn/trainings', code: '2.1', label: '연수와 모듈', desc: '추천 · 제작 · 연수 신청' },
-    { to: '/learn/materials', code: '2.2', label: '교육자료', desc: '추천 · 업로드' },
-    { to: '/learn/rooms', code: '2.3', label: '학습방', desc: '신청한 연수·모듈 학습' },
+    { to: '/learn/trainings', code: '2.1', label: '연수', desc: '직무·자율 연수 찾기 · 신청' },
+    { to: '/learn/modules', code: '2.2', label: '배움 모듈', desc: '추천 모듈 · 나의 모듈 만들기' },
+    { to: '/learn/materials', code: '2.3', label: '교육자료', desc: '추천 · 업로드' },
+    { to: '/learn/rooms', code: '2.4', label: '학습방', desc: '신청한 연수·모듈 학습' },
   ] },
   { key: 'share', label: '나눔', icon: 'heart', tone: 'pink', sub: '지식과 경험을 나누는 공간', items: [
     { to: '/share/classes', code: '3.1', label: '공개수업', desc: '공개 · 참관 · 신청 현황' },
@@ -96,7 +98,9 @@ function UserMenu() {
 }
 
 export default function Layout() {
+  const st = useStore();
   const [mobile, setMobile] = useState(false);
+  const [prof, setProf] = useState(!st.s.profile.set);
   const [q, setQ] = useState('');
   const loc = useLocation();
   const nav = useNavigate();
@@ -135,6 +139,7 @@ export default function Layout() {
             ))}
           </nav>
           <div className="hdr__tools">
+            <ProfileChip onOpen={() => setProf(true)} />
             <button className="iconbtn hdr__search-btn" aria-label="검색" onClick={() => nav('/search')}><Icon name="search" size={21} /></button>
             <Bell />
             <UserMenu />
@@ -175,6 +180,8 @@ export default function Layout() {
         </div>
         <p className="foot__note mono">PROTOTYPE · SAMPLE DATA · 2026</p>
       </footer>
+
+      <ProfileModal open={prof} onClose={() => setProf(false)} />
 
       {mobile && (
         <div className="drawer" onMouseDown={(e) => e.target === e.currentTarget && setMobile(false)}>

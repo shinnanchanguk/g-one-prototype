@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import Icon from './Icon.jsx';
@@ -150,5 +150,58 @@ export function Select({ value, onChange, options, label }) {
       </select>
       <Icon name="down" size={14} />
     </label>
+  );
+}
+
+// 누르면 설명이 뜨는 뱃지. 카드의 overflow 에 잘리지 않게 body 로 옮겨 fixed 로 띄우고,
+// 화면 가장자리에서는 안쪽으로 당기며 아래 공간이 모자라면 위로 뒤집는다.
+export function InfoPop({ label, title, children, className = '' }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const btn = useRef(null);
+  const box = useRef(null);
+  const place = useCallback(() => {
+    const a = btn.current?.getBoundingClientRect();
+    const m = box.current;
+    if (!a || !m) return;
+    const W = window.innerWidth, H = window.innerHeight, gap = 8, edge = 12;
+    const w = m.offsetWidth, h = m.offsetHeight;
+    let top = a.bottom + gap;
+    if (top + h > H - edge && a.top - gap - h >= edge) top = a.top - gap - h;
+    top = Math.max(edge, Math.min(top, H - h - edge));
+    const left = Math.max(edge, Math.min(a.left, W - w - edge));
+    setPos({ top, left });
+  }, []);
+  useLayoutEffect(() => {
+    if (!open) { setPos(null); return undefined; }
+    place();
+    const raf = requestAnimationFrame(place);
+    const onKey = (e) => e.key === 'Escape' && setOpen(false);
+    const onDown = (e) => { if (!btn.current?.contains(e.target) && !box.current?.contains(e.target)) setOpen(false); };
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [open, place]);
+  return (
+    <>
+      <button ref={btn} type="button" className={`infopop ${className}`} aria-expanded={open} aria-haspopup="dialog" onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}>
+        {label}<Icon name="info" size={12} stroke={2} />
+      </button>
+      {open && createPortal(
+        <div ref={box} role="dialog" aria-label={title} className="popbox" style={pos ? { top: pos.top, left: pos.left } : { top: 0, left: 0, visibility: 'hidden' }}>
+          <b>{title}</b>
+          <p>{children}</p>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

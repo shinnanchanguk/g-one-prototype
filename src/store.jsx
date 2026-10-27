@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { DIAG_HISTORY, DIARY, GOALS, MENTORINGS, POINT_LOG, TODAY } from './data/seed.js';
+import { DEFAULT_PROFILE, cleanProfile } from './fit.js';
 
 // 화면에서 한 모든 일은 이 브라우저(localStorage)에만 남는다.
 const KEY = 'g-one-prototype-v1';
@@ -30,7 +31,16 @@ const initial = () => ({
   points: { activity: 840, interaction: 400 },
   pointLog: [],
   notifRead: false,
+  profile: { ...DEFAULT_PROFILE },
+  homeVersion: 'a',
+  classView: 'feed',
+  quickDiag: {},
+  subjectAlerts: {},
 });
+
+// 단계는 배움·나눔·동행 세 가지로 통일했다. 예전 기록의 실천·성찰은 가까운 단계로 옮긴다.
+const STAGE_FIX = { 실천: '배움', 성찰: '나눔' };
+const fixKind = (k) => STAGE_FIX[k] ?? (['배움', '나눔', '동행'].includes(k) ? k : '배움');
 
 function load() {
   try {
@@ -46,6 +56,11 @@ function load() {
       if (Array.isArray(d) ? Array.isArray(v) : (typeof v === typeof d && v !== null && !Array.isArray(v))) base[k] = v;
     }
     if (typeof base.points.activity !== 'number' || typeof base.points.interaction !== 'number') base.points = initial().points;
+    base.profile = cleanProfile(base.profile);
+    if (!['a', 'b'].includes(base.homeVersion)) base.homeVersion = 'a';
+    if (typeof base.classView !== 'string') base.classView = 'feed';
+    base.diary = base.diary.filter((d) => d && typeof d === 'object').map((d) => ({ ...d, kind: fixKind(d.kind) }));
+    base.goals = base.goals.filter((g) => g && Array.isArray(g.tasks)).map((g) => ({ ...g, tasks: g.tasks.map((t) => ({ ...t, kind: fixKind(t.kind) })) }));
     return base;
   } catch {
     return initial();
