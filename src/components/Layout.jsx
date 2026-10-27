@@ -69,7 +69,7 @@ function Bell() {
   );
 }
 
-function UserMenu() {
+function UserMenu({ onProfile }) {
   const st = useStore();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -88,6 +88,7 @@ function UserMenu() {
             <span>{ME.school} · {ME.role}</span>
             <span className="mono">{num(st.totalPoints)}P</span>
           </div>
+          <button className="drop__item" onClick={() => { setOpen(false); onProfile(); }}>내 정보 바꾸기 <small>{st.s.profile.band}{st.s.profile.subject ? ` · ${st.s.profile.subject}` : ''} · {st.s.profile.office}</small></button>
           <Link className="drop__item" to="/growth/journey" onClick={() => setOpen(false)}>나의 성장 여정</Link>
           <Link className="drop__item" to="/together/mentoring" onClick={() => setOpen(false)}>나의 멘토링</Link>
           <button className="drop__item" onClick={() => { setOpen(false); st.reset(); }}>체험 기록 처음으로 되돌리기</button>
@@ -142,7 +143,7 @@ export default function Layout() {
             <ProfileChip onOpen={() => setProf(true)} />
             <button className="iconbtn hdr__search-btn" aria-label="검색" onClick={() => nav('/search')}><Icon name="search" size={21} /></button>
             <Bell />
-            <UserMenu />
+            <UserMenu onProfile={() => setProf(true)} />
             <button className="iconbtn hdr__burger" aria-label="메뉴 열기" onClick={() => setMobile(true)}><Icon name="menu" size={22} /></button>
           </div>
         </div>
@@ -190,6 +191,7 @@ export default function Layout() {
               <span className="logo"><span className="logo__mark" aria-hidden /><span className="logo__text"><b>G-ONE</b><small>경기 교원성장플랫폼</small></span></span>
               <button className="iconbtn" onClick={() => setMobile(false)} aria-label="메뉴 닫기"><Icon name="x" /></button>
             </div>
+            <button className="drawer__profile" onClick={() => { setMobile(false); setProf(true); }}><Icon name="user" size={16} /><span><b>내 정보</b> {st.s.profile.band}{st.s.profile.subject ? ` · ${st.s.profile.subject}` : ''} · {st.s.profile.office.replace('교육지원청', '')}</span><Icon name="right" size={14} /></button>
             <form className="searchbox" onSubmit={(e) => { submit(e); setMobile(false); }}>
               <Icon name="search" size={17} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="통합 검색" aria-label="통합 검색" />
             </form>

@@ -742,6 +742,9 @@ span.avatar.avatar { color: #fff; }
 .pchip:hover { border-color: var(--ink); }
 .pchip__k { font-weight: 700; }
 .pchip__v { color: var(--ink-2); }
+.drawer__profile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); font-size: 13.5px; }
+.drawer__profile span { color: var(--ink-2); }
+.drawer__profile b { color: var(--ink); margin-right: 4px; }
 
 /* 눌러서 보는 설명 뱃지 */
 .infopop { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: var(--pill); font-size: 12px; font-weight: 700; border: 1px solid var(--line); background: var(--card); color: var(--ink-2); white-space: nowrap; }
@@ -968,8 +971,7 @@ span.avatar.avatar { color: #fff; }
   .pchip__k { display: none; }
 }
 @media (max-width: 560px) {
-  .pchip { padding: 0 10px; height: 34px; font-size: 12px; }
-  .pchip .ico { display: none; }
+  .pchip { display: none; }
   .tcard { grid-template-columns: 72px minmax(0, 1fr); gap: 10px; padding: 10px; }
   .tcard__thumb { min-height: 72px; }
   .tcard__thumb .mono { display: none; }

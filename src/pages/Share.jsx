@@ -227,7 +227,7 @@ export function OpenClasses() {
     if (!f.audience.length) { st.toast('참관 대상 학교급을 하나 이상 골라 주세요', 'warn'); return; }
     const flow = f.flow.split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 6);
     const o = {
-      id: uid('o'), date: f.date, time: f.time, city: p.city, school: ME.school, level: '초등학교', grade: f.grade || '학급 미정', subject: f.subject, topic: f.topic.trim(), teacher: ME.name,
+      id: uid('o'), date: f.date, time: f.time, city: p.city, school: ME.school, level: { 유치원: '유치원', 초등: '초등학교', 중등: '중학교', 특수: '특수학교' }[p.band], grade: f.grade || '학급 미정', subject: f.subject, topic: f.topic.trim(), teacher: ME.name,
       scope: f.scope, cap: Math.max(1, Math.min(60, Number(f.cap) || 1)), applied: 0, mode: '대면', office: p.office, audience: f.audience, mine: true,
       plan: { file: f.file || `지도안_${f.subject}.hwpx`, goal: f.goal.trim() || f.topic.trim(), flow: flow.length ? flow : ['도입 · 생각을 여는 질문', `전개 · ${f.topic.trim()}`, '정리 · 배운 점 나누기'] },
     };
