@@ -1,31 +1,43 @@
 {
  "care": [
   "care",
-  "care2"
+  "care2",
+  "care3",
+  "care4"
  ],
  "career": [
-  "career"
+  "career",
+  "career2"
  ],
  "curr": [
-  "curr"
+  "curr",
+  "curr2"
  ],
  "digital": [
   "digital",
-  "digital2"
+  "digital2",
+  "digital3",
+  "digital4",
+  "digital5"
  ],
  "life": [
-  "life"
+  "life",
+  "life2"
  ],
  "mgmt": [
-  "mgmt"
+  "mgmt",
+  "mgmt2"
  ],
  "teach": [
   "teach",
   "teach2",
-  "teach3"
+  "teach3",
+  "teach4"
  ],
  "work": [
   "work",
-  "work2"
+  "work2",
+  "work3",
+  "work4"
  ]
 }
