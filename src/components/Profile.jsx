@@ -73,7 +73,7 @@ export function ProfileChip({ onOpen }) {
   const { s } = useStore();
   const p = s.profile;
   return (
-    <button className="pchip" onClick={onOpen} aria-label={`내 정보: ${profileLabel(p, p.office)}. 눌러서 바꾸기`}>
+    <button className="pchip" onClick={onOpen} title={profileLabel(p, p.office)} aria-label={`내 정보: ${profileLabel(p, p.office)}. 눌러서 바꾸기`}>
       <Icon name="user" size={15} />
       <span className="pchip__k">내 정보</span>
       <span className="pchip__v">{profileLabel(p, shortOffice(p.office))}</span>

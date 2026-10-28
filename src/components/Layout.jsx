@@ -107,6 +107,8 @@ export default function Layout() {
   const loc = useLocation();
   // 메뉴에서 페이지를 고르면 펼친 하위 메뉴를 닫는다. 포인터가 메뉴를 벗어날 때까지 다시 열리지 않게 한다.
   const [shut, setShut] = useState(null);
+  // 터치로 위 메뉴를 누르면 하위 메뉴가 열려 있어야 하므로 닫지 않는다(클릭 이벤트에 입력 종류가 없는 브라우저도 있어 누를 때 기록)
+  const pointer = useRef('mouse');
   const pick = (key) => { setShut(key); if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); };
   const nav = useNavigate();
   useEffect(() => { setMobile(false); window.scrollTo(0, 0); }, [loc.pathname]);
@@ -127,8 +129,8 @@ export default function Layout() {
           </Link>
           <nav className="gnb" aria-label="주 메뉴">
             {MENU.map((m) => (
-              <div key={m.key} className={`gnb__item ${shut === m.key ? 'is-shut' : ''}`} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))}>
-                <NavLink to={m.items[0].to} onClick={() => pick(m.key)} className={({ isActive }) => `gnb__link ${loc.pathname.startsWith(`/${m.key}`) || isActive ? 'is-on' : ''}`}>
+              <div key={m.key} className={`gnb__item ${shut === m.key ? 'is-shut' : ''}`} onMouseEnter={() => setShut((k) => (k === m.key ? null : k))} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))}>
+                <NavLink to={m.items[0].to} onPointerDown={(e) => { pointer.current = e.pointerType; }} onClick={() => { if (pointer.current !== 'touch') pick(m.key); }} className={({ isActive }) => `gnb__link ${loc.pathname.startsWith(`/${m.key}`) || isActive ? 'is-on' : ''}`}>
                   <span className={`gnb__ico tone-${m.tone}`}><Icon name={m.icon} size={18} /></span>
                   <span className="gnb__txt"><b>{m.label}</b><small>{m.sub}</small></span>
                 </NavLink>
@@ -189,7 +191,7 @@ export default function Layout() {
             {MENU.map((m) => (
               <div key={m.key} className="drawer__group">
                 <p><span className={`gnb__ico tone-${m.tone}`}><Icon name={m.icon} size={16} /></span>{m.label}</p>
-                {m.items.map((it) => <NavLink key={it.to} to={it.to} className="drawer__link"><span className="mono">{it.code}</span>{it.label}</NavLink>)}
+                {m.items.map((it) => <NavLink key={it.to} to={it.to} className="drawer__link" onClick={() => setMobile(false)}><span className="mono">{it.code}</span>{it.label}</NavLink>)}
               </div>
             ))}
           </div>
