@@ -81,12 +81,12 @@ i { display: inline-block; width: 1px; height: 0.8em; background: var(--line); m
 /* ── 머리말 ── */
 .hdr { position: sticky; top: 0; z-index: 50; background: rgba(244, 241, 235, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
 .hdr__in { max-width: 1480px; margin: 0 auto; padding: 0 28px; height: 74px; display: flex; align-items: center; gap: 24px; }
-.logo { display: inline-flex; align-items: center; gap: 10px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; flex: none; }
 .logo__mark { width: 30px; height: 30px; border-radius: 50%; background: conic-gradient(from 200deg, var(--blue), var(--green), var(--yellow), var(--orange), var(--pink-soft), var(--purple), var(--blue)); box-shadow: inset 0 0 0 7px var(--bg); outline: 1px solid var(--ink); flex: none; }
-.logo__text { display: flex; flex-direction: column; line-height: 1.05; }
+.logo__text { display: flex; flex-direction: column; line-height: 1.05; white-space: nowrap; }
 .logo__text b { font-family: var(--display); font-size: 22px; letter-spacing: -0.04em; }
 .logo__text small { font-size: 11px; color: var(--ink-2); font-weight: 600; letter-spacing: -0.02em; }
-.gnb { display: flex; gap: 4px; margin: 0 auto; height: 100%; }
+.gnb { display: flex; gap: 4px; margin: 0 auto; height: 100%; min-width: 0; }
 .gnb__item { position: relative; height: 100%; display: flex; align-items: center; }
 .gnb__link { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: var(--pill); transition: background 0.15s; }
 .gnb__link:hover, .gnb__item:focus-within .gnb__link { background: rgba(17, 17, 17, 0.05); }
@@ -94,10 +94,11 @@ i { display: inline-block; width: 1px; height: 0.8em; background: var(--line); m
 .gnb__link.is-on .gnb__txt small { color: rgba(255, 255, 255, 0.65); }
 .gnb__ico { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex: none; }
 .gnb__txt { display: flex; flex-direction: column; line-height: 1.15; }
-.gnb__txt b { font-size: 16px; font-weight: 700; }
+.gnb__txt b { font-size: 16px; font-weight: 700; white-space: nowrap; }
 .gnb__txt small { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
 .gnb__mega { position: absolute; top: calc(100% - 6px); left: 50%; transform: translateX(-50%); min-width: 250px; background: var(--card); border: 1px solid var(--ink); border-radius: 18px; padding: 8px; box-shadow: var(--shadow); display: none; z-index: 60; }
 .gnb__item:hover .gnb__mega, .gnb__item:focus-within .gnb__mega { display: block; }
+.gnb__item.is-shut .gnb__mega { display: none; }
 .gnb__sub { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; }
 .gnb__sub:hover, .gnb__sub.active { background: var(--bg-2); }
 .gnb__sub .mono { padding-top: 3px; min-width: 26px; }
@@ -661,9 +662,14 @@ span.avatar.avatar { color: #fff; }
 .drawer .searchbox { flex: none; }
 
 /* ── 반응형 ── */
-@media (max-width: 1320px) {
+@media (max-width: 1480px) {
   .gnb__txt small { display: none; }
+}
+@media (max-width: 1320px) {
   .gnb__link { padding: 8px 10px; }
+  /* 메뉴가 들어갈 자리를 남기도록 내 정보 칩은 값만 짧게 */
+  .pchip__k { display: none; }
+  .pchip__v { max-width: 9em; }
 }
 @media (max-width: 1180px) {
   .gnb { display: none; }
@@ -727,7 +733,7 @@ span.avatar.avatar { color: #fff; }
 .pchip { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--pill); background: var(--card); font-size: 13px; white-space: nowrap; }
 .pchip:hover { border-color: var(--ink); }
 .pchip__k { font-weight: 700; }
-.pchip__v { color: var(--ink-2); }
+.pchip__v { color: var(--ink-2); max-width: 16em; overflow: hidden; text-overflow: ellipsis; }
 .drawer__profile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); font-size: 13.5px; }
 .drawer__profile span { color: var(--ink-2); }
 .drawer__profile b { color: var(--ink); margin-right: 4px; }

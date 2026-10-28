@@ -105,6 +105,9 @@ export default function Layout() {
   const [prof, setProf] = useState(!st.s.profile.set);
   const [q, setQ] = useState('');
   const loc = useLocation();
+  // 메뉴에서 페이지를 고르면 펼친 하위 메뉴를 닫는다. 포인터가 메뉴를 벗어날 때까지 다시 열리지 않게 한다.
+  const [shut, setShut] = useState(null);
+  const pick = (key) => { setShut(key); if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); };
   const nav = useNavigate();
   useEffect(() => { setMobile(false); window.scrollTo(0, 0); }, [loc.pathname]);
   useEffect(() => { document.body.style.overflow = mobile ? 'hidden' : ''; }, [mobile]);
@@ -124,14 +127,14 @@ export default function Layout() {
           </Link>
           <nav className="gnb" aria-label="주 메뉴">
             {MENU.map((m) => (
-              <div key={m.key} className="gnb__item">
-                <NavLink to={m.items[0].to} className={({ isActive }) => `gnb__link ${loc.pathname.startsWith(`/${m.key}`) || isActive ? 'is-on' : ''}`}>
+              <div key={m.key} className={`gnb__item ${shut === m.key ? 'is-shut' : ''}`} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))}>
+                <NavLink to={m.items[0].to} onClick={() => pick(m.key)} className={({ isActive }) => `gnb__link ${loc.pathname.startsWith(`/${m.key}`) || isActive ? 'is-on' : ''}`}>
                   <span className={`gnb__ico tone-${m.tone}`}><Icon name={m.icon} size={18} /></span>
                   <span className="gnb__txt"><b>{m.label}</b><small>{m.sub}</small></span>
                 </NavLink>
                 <div className="gnb__mega">
                   {m.items.map((it) => (
-                    <NavLink key={it.to} to={it.to} className="gnb__sub">
+                    <NavLink key={it.to} to={it.to} className="gnb__sub" onClick={() => pick(m.key)}>
                       <span className="mono">{it.code}</span>
                       <span><b>{it.label}</b><small>{it.desc}</small></span>
                     </NavLink>
