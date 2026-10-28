@@ -90,7 +90,7 @@ i { display: inline-block; width: 1px; height: 0.8em; background: var(--line); m
 .gnb__item { position: relative; height: 100%; display: flex; align-items: center; }
 .gnb__link { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: var(--pill); transition: background 0.15s; }
 .gnb__link:hover, .gnb__item:focus-within .gnb__link { background: rgba(17, 17, 17, 0.05); }
-.gnb__link.is-on { background: var(--ink); color: #fff; }
+.gnb__link.is-on, .gnb__item:focus-within .gnb__link.is-on { background: var(--ink); color: #fff; }
 .gnb__link.is-on .gnb__txt small { color: rgba(255, 255, 255, 0.65); }
 .gnb__ico { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex: none; }
 .gnb__txt { display: flex; flex-direction: column; line-height: 1.15; }
@@ -1047,6 +1047,6 @@ img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
 .home__soft .home__mine { color: var(--ink-2); }
 
 /* 머리말이 좁아지면 내 정보 칩 값을 줄이고, 더 좁으면 서랍 메뉴(내 정보 버튼이 있다)에만 둔다 */
-@media (max-width: 1320px) { .hdr .pchip__v { max-width: 12em; } }
+@media (min-width: 1181px) and (max-width: 1320px) { .hdr .pchip__v { max-width: 12em; } }
 @media (max-width: 760px) { .hdr .pchip { display: none; } }
 @media (max-width: 360px) { .hdr__search-btn { display: none; } }

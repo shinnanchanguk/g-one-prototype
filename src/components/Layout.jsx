@@ -129,8 +129,8 @@ export default function Layout() {
           </Link>
           <nav className="gnb" aria-label="주 메뉴">
             {MENU.map((m) => (
-              <div key={m.key} className={`gnb__item ${shut === m.key ? 'is-shut' : ''}`} onMouseEnter={() => setShut((k) => (k === m.key ? null : k))} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))}>
-                <NavLink to={m.items[0].to} onPointerDown={(e) => { pointer.current = e.pointerType; }} onClick={() => { if (pointer.current !== 'touch') pick(m.key); }} className={({ isActive }) => `gnb__link ${loc.pathname.startsWith(`/${m.key}`) || isActive ? 'is-on' : ''}`}>
+              <div key={m.key} className={`gnb__item ${shut === m.key ? 'is-shut' : ''}`} onMouseEnter={() => setShut((k) => (k === m.key ? null : k))} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))} onKeyDown={(e) => { if (e.key === 'Escape') pick(m.key); }}>
+                <NavLink to={m.items[0].to} onPointerDown={(e) => { pointer.current = e.pointerType; }} onClick={() => { const t = pointer.current; pointer.current = 'mouse'; if (t !== 'touch') pick(m.key); }} className={({ isActive }) => `gnb__link ${loc.pathname.startsWith(`/${m.key}`) || isActive ? 'is-on' : ''}`}>
                   <span className={`gnb__ico tone-${m.tone}`}><Icon name={m.icon} size={18} /></span>
                   <span className="gnb__txt"><b>{m.label}</b><small>{m.sub}</small></span>
                 </NavLink>

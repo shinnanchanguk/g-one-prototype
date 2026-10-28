@@ -40,7 +40,7 @@ export function ProfileModal({ open, onClose }) {
         {!st.s.profile.set && <button className="btn btn--line" onClick={later}>나중에 고를게요</button>}
         <button className="btn btn--dark" onClick={save}><Icon name="check" size={15} />이대로 보기</button>
       </>}>
-      <p className="lead">몇 가지만 알려 주시면 연수, 배움 모듈, 교육자료, 공개수업을 선생님께 맞는 것부터 보여 드려요. 머리말의 <b>내 정보</b>에서 언제든 바꿀 수 있어요.</p>
+      <p className="lead">몇 가지만 알려 주시면 연수, 배움 모듈, 교육자료, 공개수업을 선생님께 맞는 것부터 보여 드려요. 오른쪽 위 이름을 누르면 나오는 <b>내 정보 바꾸기</b>에서 언제든 바꿀 수 있어요.</p>
       <div className="field">
         <span className="field__label">어디에서 가르치세요?</span>
         <div className="seg seg--full" role="radiogroup" aria-label="학교급">
