@@ -1045,3 +1045,11 @@ img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
 .field__static { font-size: 14.5px; font-weight: 600; color: var(--ink-2); padding: 10px 0; }
 /* 좁은 화면에서 날짜를 고르면 내려가는 목록이 머리말에 가리지 않게 */
 .calwrap__side { scroll-margin-top: 84px; }
+
+/* 모바일 검색칸 넘침: 사파리는 입력칸의 기본 너비(약 300px)를 줄이지 않아 첫 화면 검색 줄이 오른쪽으로 밀려났다.
+   입력칸 기본 너비를 0으로 두고 남는 자리를 채우게 하며, 검은 첫 칸의 열도 내용보다 작아질 수 있게 한다. */
+.home__search { min-width: 0; }
+.home__search input, .searchbox input { width: 0; text-overflow: ellipsis; }
+@media (max-width: 900px) { .home__hero { grid-template-columns: minmax(0, 1fr); } }
+/* 아이폰은 16px 보다 작은 입력칸을 누르면 화면을 확대해 옆으로 밀린다. 검색칸은 16px 로 */
+@media (max-width: 560px) { .home__search input, .searchbox input { font-size: 16px; } }
