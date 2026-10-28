@@ -44,13 +44,16 @@ const STAGE_FIX = { 실천: '배움', 성찰: '나눔' };
 const fixKind = (k) => STAGE_FIX[k] ?? (['배움', '나눔', '동행'].includes(k) ? k : '배움');
 // 공개수업 보기는 한 달 달력과 맞춤 피드 두 가지(예전 판의 주간·지도 보기 선택은 버리고 달력으로 연다)
 export const OPEN_VIEWS = ['cal', 'feed'];
+// 익명 글쓴이는 내 정보의 학교급으로 보인다(익명의 중등 선생님 등)
+export const anonBand = (p) => (BANDS.includes(p?.band) ? p.band : '초등');
 const SCOPES = ['학교', '지원청', '도'];
 const CITY_OK = new Set(CITIES.map((c) => c.name));
-const str = (v, n) => String(v ?? '').slice(0, n);
+// 문자열이 아닌 값(객체 등)은 그 칸만 비운다. String(객체)가 던지면 저장 기록 전체가 처음으로 돌아가므로
+const str = (v, n) => (typeof v === 'string' ? v : typeof v === 'number' && Number.isFinite(v) ? String(v) : '').slice(0, n);
 // 예전 체험판의 교과 이름(도덕·정보·진로 등)을 도름스 분류 이름으로 옮긴다
 const subj = (v) => (Object.hasOwn(SUBJECT_ALIAS, v) ? SUBJECT_ALIAS[v] : v);
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const isDate = (v) => { try { return typeof v === 'string' && DATE.test(v) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v; } catch { return false; } };
+export const isDate = (v) => { try { return typeof v === 'string' && DATE.test(v) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v; } catch { return false; } };
 const obj = (x) => x && typeof x === 'object' && !Array.isArray(x);
 const nonneg = (v) => (Number.isFinite(v) && v >= 0 ? Math.trunc(v) : 0);
 // 예전 판의 진단 영역 키를 기존 역량진단 10개 영역 키로 옮긴다
@@ -112,10 +115,12 @@ function load() {
       .map(([k, v]) => [k, v.filter(obj).map((c) => ({ ...c, author: str(c.author, 30), body: str(c.body, 1000), date: isDate(c.date) ? c.date : TODAY }))]));
     const LAST = INVITE_STEPS.length - 1;
     const stepOk = (v) => Number.isInteger(v) && v >= 0 && v <= LAST;
-    base.invites = base.invites.filter((v) => obj(v) && typeof v.id === 'string' && INSTRUCTORS.some((x) => x.id === v.instructorId) && isDate(v.date))
-      .map((v) => ({ id: str(v.id, 40), instructorId: v.instructorId, topic: str(v.topic, 80), date: v.date, time: str(v.time, 20), format: v.format === '원격' ? '원격' : '대면', target: INSTRUCTOR_TARGETS.includes(v.target) ? v.target : INSTRUCTOR_TARGETS[0], count: Math.max(1, Math.min(300, Math.trunc(Number(v.count)) || 1)), memo: str(v.memo, 500), step: stepOk(v.step) ? v.step : 0, created: isDate(v.created) ? v.created : TODAY, next: str(v.next, 120), review: Number.isInteger(v.review) && v.review >= 1 && v.review <= 5 ? v.review : undefined }));
-    base.inviteStep = Object.fromEntries(Object.entries(base.inviteStep).filter(([, v]) => stepOk(v)));
-    base.inviteReview = Object.fromEntries(Object.entries(base.inviteReview).filter(([, v]) => Number.isInteger(v) && v >= 1 && v <= 5));
+    // 초빙 id 는 앱이 만든 모양(v + 영숫자)만 받는다. constructor 같은 이름이 단계·후기 표에서 물려받은 값을 읽지 않게
+    const INVITE_ID = /^v[a-z0-9]{1,38}$/;
+    base.invites = base.invites.filter((v) => obj(v) && typeof v.id === 'string' && INVITE_ID.test(v.id) && INSTRUCTORS.some((x) => x.id === v.instructorId) && isDate(v.date) && typeof v.topic === 'string' && v.topic.trim())
+      .map((v) => ({ id: str(v.id, 40), instructorId: v.instructorId, topic: str(v.topic, 80), date: v.date, time: str(v.time, 20) || '시간 협의', format: v.format === '원격' ? '원격' : '대면', target: INSTRUCTOR_TARGETS.includes(v.target) ? v.target : INSTRUCTOR_TARGETS[0], count: Math.max(1, Math.min(300, Math.trunc(Number(v.count)) || 1)), memo: str(v.memo, 500), step: stepOk(v.step) ? v.step : 0, created: isDate(v.created) ? v.created : TODAY, next: str(v.next, 120), review: Number.isInteger(v.review) && v.review >= 1 && v.review <= 5 ? v.review : undefined }));
+    base.inviteStep = Object.fromEntries(Object.entries(base.inviteStep).filter(([k, v]) => INVITE_ID.test(k) && stepOk(v)));
+    base.inviteReview = Object.fromEntries(Object.entries(base.inviteReview).filter(([k, v]) => INVITE_ID.test(k) && Number.isInteger(v) && v >= 1 && v <= 5));
     return base;
   } catch {
     return initial();

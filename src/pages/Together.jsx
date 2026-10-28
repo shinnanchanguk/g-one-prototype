@@ -4,7 +4,7 @@ import { InstructorCard, MentorCard, WorryItem } from '../components/cards.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Empty, Field, Modal, PageHead, Panel, SearchBox, Select, Tabs, fmtDate, shortDate } from '../components/ui.jsx';
 import { INSTRUCTOR_TARGETS, INSTRUCTORS, INVITE_STEPS, LEVELS, ME, MENTOR_FIELDS, MENTORING_STEPS, MENTORS, REGIONS, TODAY, WORRIES, WORRY_TAGS, instructorOf } from '../data/seed.js';
-import { uid, useStore } from '../store.jsx';
+import { anonBand, isDate, uid, useStore } from '../store.jsx';
 
 export function Worries() {
   const st = useStore();
@@ -18,7 +18,7 @@ export function Worries() {
   const post = (e) => {
     e.preventDefault();
     if (!f.title.trim() || !f.body.trim()) { st.toast('제목과 내용을 적어 주세요', 'warn'); return; }
-    const w = { id: uid('w'), tag: f.tag, title: f.title.trim(), body: f.body.trim(), author: f.anon ? '익명의 초등 선생님' : ME.name, date: TODAY, likes: 0, solved: false, mine: true, comments: [] };
+    const w = { id: uid('w'), tag: f.tag, title: f.title.trim(), body: f.body.trim(), author: f.anon ? `익명의 ${anonBand(st.s.profile)} 선생님` : ME.name, date: TODAY, likes: 0, solved: false, mine: true, comments: [] };
     st.patch((s) => ({ myWorries: [w, ...s.myWorries] }));
     st.award('활동', 5, '쫑알쫑알 글 남기기');
     st.toast('글을 남겼어요 · 모든 동료 선생님이 함께 봐요');
@@ -151,7 +151,7 @@ export function Mentors() {
       <Modal open={!!pick} onClose={() => setPick(null)} title={pick ? `${pick.name} 선생님` : ''} wide footer={<button className="btn btn--dark" onClick={apply}><Icon name="send" size={15} />멘토링 신청</button>}>
         {pick && (
           <div className="grid2 grid2--modal">
-            <div>
+            <div className="modal__col">
               {pick.verified && <p className="vbadge"><Icon name="shield" size={16} /> 우수멘토 · {pick.verified}</p>}
               <div className="detail-meta"><Avatar name={pick.name} size={52} /><div><b>{pick.name} 선생님</b><span>{pick.school} · {pick.role} · 경력 {pick.years}년</span></div></div>
               <p className="lead">{pick.intro}</p>
@@ -235,7 +235,6 @@ export function Mentoring() {
 }
 
 // ── 4.1 강사 인력풀: 검증된 선생님을 학교 연수 강사로 초빙 ─────────────────
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const nextOf = (v, cur, name) => {
   if (cur === 0) return `${name} 선생님의 수락을 기다리고 있어요`;
   if (cur === 1) return '수락했어요 · 날짜와 장소를 함께 정해요';
@@ -272,10 +271,11 @@ export function Instructors() {
 
   const send = () => {
     const topic = (f.topic === '직접 적기' ? f.custom : f.topic).trim().slice(0, 80);
-    if (!topic) { st.toast('연수 주제를 골라 주세요', 'warn'); return; }
-    if (!DATE_RE.test(f.date) || f.date < TODAY) { st.toast('희망 날짜를 골라 주세요', 'warn'); return; }
-    const count = Math.trunc(Number(f.count));
-    if (!(count >= 1 && count <= 300)) { st.toast('예상 인원은 1명에서 300명 사이로 적어 주세요', 'warn'); return; }
+    if (!topic) { st.toast(f.topic === '직접 적기' ? '연수 주제를 적어 주세요' : '연수 주제를 골라 주세요', 'warn'); return; }
+    if (!isDate(f.date)) { st.toast('희망 날짜를 골라 주세요', 'warn'); return; }
+    if (f.date < TODAY) { st.toast('오늘 이후 날짜를 골라 주세요', 'warn'); return; }
+    const count = Number(f.count);
+    if (!(Number.isInteger(count) && count >= 1 && count <= 300)) { st.toast('예상 인원은 1명에서 300명 사이로 적어 주세요', 'warn'); return; }
     const v = { id: uid('v'), instructorId: pick.id, topic, date: f.date, time: f.time.trim().slice(0, 20) || '시간 협의', format: pick.formats.includes(f.format) ? f.format : pick.formats[0], target: INSTRUCTOR_TARGETS.includes(f.target) ? f.target : INSTRUCTOR_TARGETS[0], count, memo: f.memo.trim().slice(0, 500), step: 0, created: TODAY, next: '' };
     st.patch((s) => ({ invites: [v, ...s.invites] }));
     st.toast(`${pm.name} 선생님께 학교 연수 초빙을 요청했어요 · 초빙 현황에서 이어서 볼 수 있어요`);
@@ -290,7 +290,7 @@ export function Instructors() {
 
   return (
     <div className="container">
-      <PageHead crumbs={['동행', '강사 인력풀']} code="4.1 · 멘토 찾기 및 신청 → 강사 인력풀" title="강사 인력풀" desc="수석교사, 각종 지원단, 교권보호지원단, 영역 전문가 인증을 받은 선생님을 학교 연수 강사로 초빙합니다. 아는 사람을 따로 수소문하지 않아도 주제와 지역으로 찾아 바로 요청할 수 있습니다.">
+      <PageHead crumbs={['동행', '강사 인력풀']} code="4.1 · 멘토 찾기 및 신청 · 강사 인력풀" title="강사 인력풀" desc="수석교사, 각종 지원단, 교권보호지원단, 영역 전문가 인증을 받은 선생님을 학교 연수 강사로 초빙합니다. 아는 사람을 따로 수소문하지 않아도 주제와 지역으로 찾아 바로 요청할 수 있습니다.">
         <Link to="/together/mentors" className="btn btn--line"><Icon name="users" size={16} />1:1 멘토 찾기</Link>
       </PageHead>
       <Tabs value={tab} onChange={setTab} className="tabs--page" items={[{ value: 'find', label: `강사 찾기 (${INSTRUCTORS.length})`, icon: 'search' }, { value: 'status', label: `초빙 현황 (${invites.length})`, icon: 'list' }]} />
@@ -308,7 +308,7 @@ export function Instructors() {
           <Tabs size="sm" value={sort} onChange={setSort} items={['학교 연수 많은 순', '만족도 순']} />
         </div>
         <div className="mtgrid">{list.map(({ i, m }) => <InstructorCard key={i.id} i={i} m={m} onInvite={open} />)}</div>
-        {!list.length && <Empty text="조건에 맞는 강사가 없어요. 조건을 넓혀 보세요." />}
+        {!list.length && <Empty text="조건에 맞는 강사가 없어요. 찾는 범위를 넓혀 보세요." />}
       </>}
 
       {tab === 'status' && (
@@ -316,8 +316,10 @@ export function Instructors() {
           {invites.map((v) => {
             const i = INSTRUCTORS.find((x) => x.id === v.instructorId);
             const m = mentorOf(i);
-            const cur = Math.min(stepOv[v.id] ?? v.step, INVITE_STEPS.length - 1);
-            const review = st.s.inviteReview[v.id] ?? v.review;
+            const cur = Math.min(Object.hasOwn(stepOv, v.id) ? stepOv[v.id] : v.step, INVITE_STEPS.length - 1);
+            const review = Object.hasOwn(st.s.inviteReview, v.id) ? st.s.inviteReview[v.id] : v.review;
+            // 후기까지 남기면 마지막 단계도 끝난 것으로 그린다
+            const end = cur >= INVITE_STEPS.length - 1 && review ? INVITE_STEPS.length : cur;
             return (
               <article key={v.id} className="mtr">
                 <div className="mtr__head">
@@ -326,7 +328,7 @@ export function Instructors() {
                   <Chip tone={cur >= 4 ? 'green' : cur === 0 ? 'orange' : 'ink'} solid>{INVITE_STEPS[cur]}</Chip>
                 </div>
                 <ol className="track">
-                  {INVITE_STEPS.map((x, k) => <li key={x} className={k < cur ? 'is-done' : k === cur ? 'is-on' : ''}><span className="track__dot">{k < cur && <Icon name="check" size={12} stroke={2.6} />}</span><span>{x}</span></li>)}
+                  {INVITE_STEPS.map((x, k) => <li key={x} className={k < end ? 'is-done' : k === end ? 'is-on' : ''}><span className="track__dot">{k < end && <Icon name="check" size={12} stroke={2.6} />}</span><span>{x}</span></li>)}
                 </ol>
                 {v.memo && <p className="mtr__memo">요청 메모 · {v.memo}</p>}
                 <div className="row-between">
@@ -343,7 +345,7 @@ export function Instructors() {
       <Modal open={!!pick} onClose={close} title={pm ? `${pm.name} 선생님 · 학교 연수 초빙` : ''} wide footer={<button className="btn btn--dark" onClick={send}><Icon name="send" size={15} />초빙 요청 보내기</button>}>
         {pick && pm && (
           <div className="grid2 grid2--modal">
-            <div>
+            <div className="modal__col">
               <div className="incard__basis">{pick.basis.map((b) => <span key={b} className="vbadge"><Icon name="shield" size={16} />{b}</span>)}</div>
               <div className="detail-meta"><Avatar name={pm.name} size={52} /><div><b>{pm.name} 선생님</b><span>{pm.school} · {pm.role} · 경력 {pm.years}년</span></div></div>
               <p className="lead">{pm.intro}</p>
@@ -367,7 +369,9 @@ export function Instructors() {
               </div>
               <div className="field">
                 <span className="field__label">운영 방식</span>
-                <div className="seg seg--full" role="radiogroup" aria-label="운영 방식">{pick.formats.map((x) => <button key={x} type="button" role="radio" aria-checked={f.format === x} className={f.format === x ? 'is-on' : ''} onClick={() => setF({ ...f, format: x })}>{x}</button>)}</div>
+                {pick.formats.length > 1
+                  ? <div className="seg seg--full" role="radiogroup" aria-label="운영 방식">{pick.formats.map((x) => <button key={x} type="button" role="radio" aria-checked={f.format === x} className={f.format === x ? 'is-on' : ''} onClick={() => setF({ ...f, format: x })}>{x}</button>)}</div>
+                  : <p className="field__static">{pick.formats[0]}만 가능해요</p>}
               </div>
               <div className="row2">
                 <Field label="대상"><select className="input" value={f.target} onChange={(e) => setF({ ...f, target: e.target.value })}>{INSTRUCTOR_TARGETS.map((x) => <option key={x}>{x}</option>)}</select></Field>
@@ -381,7 +385,7 @@ export function Instructors() {
 
       <Modal open={!!rate} onClose={() => setRate(null)} title="학교 연수 후기" footer={<button className="btn btn--dark" onClick={() => {
         st.patch((s) => ({ inviteStep: { ...s.inviteStep, [rate.id]: 4 }, inviteReview: { ...s.inviteReview, [rate.id]: score } }));
-        st.toast('후기를 남겼어요 · 다른 학교가 강사를 고를 때 참고해요');
+        st.toast('후기를 남겼어요 · 다른 학교가 강사를 고를 때 참고가 돼요');
         setRate(null);
       }}>후기 남기기</button>}>
         <p className="lead">「{rate?.topic}」 연수는 우리 학교에 얼마나 도움이 되었나요?</p>

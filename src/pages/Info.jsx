@@ -46,9 +46,9 @@ export function About() {
           </div>
         ))}
       </div>
-      <Panel dark title="초기화면 구성" code="보고서 Ⅲ. 서비스 구조도">
+      <Panel dark title="초기화면 구성" code="TF 확정안 · 성장 콘텐츠와 쫑알쫑알을 한눈에">
         <div className="layout6">
-          {[['상단 왼쪽', '수업 공개 현황', '지도형으로 3.1 공개수업 노출'], ['상단 가운데', '교육청/지원청 연수 신청', '2.1 연수 목록 노출'], ['상단 오른쪽', '포트폴리오', '1.2 포트폴리오 요약 · 뱃지 · 포인트'], ['하단 왼쪽', '학습방/공동체 통합', '2.3 학습방과 3.2 공동체를 버튼으로 전환'], ['하단 가운데', '교육 자료 추천', '2.2 교육자료 좋아요순 정렬'], ['하단 오른쪽', '고민 남기기', '4.1 고민을 누르면 바로 댓글']].map(([p, n, d]) => (
+          {[['위', '고민·주제로 찾기', '통합 검색으로 바로 이어짐'], ['위', '성장 설계 권유 띠', '1.1 성장 설계 · 1.2 성장 여정 요약'], ['왼쪽', '고민별 입구 다섯 칸', '수업 · 생활지도 · AI · 마음 · 업무'], ['왼쪽', '성장 콘텐츠', '2.1 연수 · 2.2 배움 모듈 · 2.3 교육자료를 나에게 맞는 순과 인기순으로'], ['오른쪽', '쫑알쫑알', '4.1 글을 누르면 바로 댓글'], ['메뉴', '나눔 · 동행', '3.1 공개수업 · 3.2 공동체 · 4.1 강사 인력풀']].map(([p, n, d]) => (
             <Link key={n} to="/" className="layout6__cell"><span className="mono">{p}</span><b>{n}</b><small>{d}</small></Link>
           ))}
         </div>
@@ -117,10 +117,12 @@ export function Search() {
     classes: [...st.s.myClasses, ...OPEN_CLASSES].filter((x) => classAccess(x, st.s.profile) !== 'hidden' && has(x.topic + x.subject + x.school)),
     worries: [...st.s.myWorries, ...WORRIES].filter((x) => has(x.title + x.body)),
     mentors: MENTORS.filter((x) => has(x.name + x.intro + x.fields.join(' '))),
-    instructors: INSTRUCTORS.filter((x) => has(x.topics.map((t) => t.title).join(' ') + x.basis.join(' '))),
+    instructors: INSTRUCTORS.filter((x) => { const m = MENTORS.find((y) => y.id === x.mentorId); return has(`${m.name} ${m.school} ${x.topics.map((t) => t.title).join(' ')} ${x.basis.join(' ')} 강사 인력풀 학교 연수 초빙`); }),
     outcomes: OUTCOMES.filter((x) => has(x.title + x.summary)),
   };
-  const total = Object.values(r).reduce((a, x) => a + x.length, 0);
+  // 메뉴 이름·설명이 맞으면 그 화면으로 바로 가는 길을 맨 위에 보인다(예: 쫑알, 강사)
+  const menus = MENU.flatMap((m) => m.items.map((it) => ({ ...it, group: m.label }))).filter((it) => has(`${it.group} ${it.label} ${it.desc}`));
+  const total = Object.values(r).reduce((a, x) => a + x.length, 0) + menus.length;
   const trainImgs = thumbsFor(r.trainings, (t) => t.cat);
   const matImgs = thumbsFor(r.materials, matCat, 3);
   return (
@@ -130,6 +132,7 @@ export function Search() {
       {!q && <div className="chips mt">{['AI', '질문', '평가', '마음', '수학', '생활교육'].map((k) => <button key={k} className="chip chip--btn" onClick={() => setSp({ q: k })}>#{k}</button>)}</div>}
       {q && <p className="mono mt">「{q}」 검색 결과 {total}건</p>}
       {q && !total && <Empty text="검색 결과가 없어요" />}
+      {menus.length > 0 && <Panel title="메뉴 바로 가기" code={`${menus.length}`}><ul className="olist">{menus.map((x) => <li key={x.to}><Link to={x.to}><span className="dot bg-ink" /><span><b>{x.group} · {x.label}</b><small>{x.desc}</small></span></Link></li>)}</ul></Panel>}
       {r.trainings.length > 0 && <Panel title="연수" code={`${r.trainings.length}`}><div className="tcards">{r.trainings.map((x, i) => <TrainingCard key={x.id} t={x} thumb={trainImgs[i]} />)}</div></Panel>}
       {r.modules.length > 0 && <Panel title="배움 모듈" code={`${r.modules.length}`}><div className="modgrid">{r.modules.map((x) => <ModuleCard key={x.id} m={x} />)}</div></Panel>}
       {r.materials.length > 0 && <Panel title="교육자료" code={`${r.materials.length}`}><div className="mgrid">{r.materials.map((x, i) => <MaterialCard key={x.id} m={x} thumb={matImgs[i]} />)}</div></Panel>}

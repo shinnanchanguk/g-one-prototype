@@ -24,4 +24,4 @@ npm run dev
 npm run build
 ```
 
-디자인은 Chroma 테마(Space Grotesk · JetBrains Mono · Wanted Sans, 모두 OFL, `public/fonts`)를 썼습니다. 경기도 시군 경계는 통계청 2013 경계(southkorea-maps)에서 `scripts/build-map.py` 로 만들었습니다.
+디자인은 Chroma 테마(Space Grotesk · JetBrains Mono · Wanted Sans, 모두 OFL, `public/fonts`)를 썼습니다. 이웃 지원청을 고를 때 쓰는 경기도 시군 중심 좌표는 통계청 2013 경계(southkorea-maps)에서 `scripts/build-map.py` 로 만들었습니다.

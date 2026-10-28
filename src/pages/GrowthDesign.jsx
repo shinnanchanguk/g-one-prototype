@@ -5,7 +5,7 @@ import Icon from '../components/Icon.jsx';
 import { Chip, PageHead, Panel } from '../components/ui.jsx';
 import { AREA_QUESTIONS, AREAS, GROWTH_TYPES, MENTORS, MODULES, ROOMS, SCALE, TODAY, TRAININGS } from '../data/seed.js';
 import { trainingState } from '../components/cards.jsx';
-import { uid, useStore } from '../store.jsx';
+import { anonBand, uid, useStore } from '../store.jsx';
 
 export const AREA_CAT = Object.fromEntries(AREAS.map((a) => [a.key, a.cat]));
 const STEPS = ['고민 입력', '성장 출발점 찾기', 'AI 성장 키워드', '도움 찾기', '새 성장 목표'];
@@ -72,7 +72,7 @@ export default function GrowthDesign() {
     st.patch((s) => ({
       goals: [...s.goals, g],
       diagnoses: [...s.diagnoses, { date: TODAY, label: `${TODAY.slice(0, 4)}년 ${Number(TODAY.slice(5, 7))}월 (오늘)`, scores, type: res.type.title, worry: text }],
-      myWorries: share && text.trim() ? [{ id: uid('w'), tag: '수업 고민', title: text.trim().slice(0, 36) + (text.length > 36 ? '…' : ''), body: text.trim(), author: '익명의 초등 선생님', date: TODAY, likes: 0, solved: false, mine: true, comments: [] }, ...s.myWorries] : s.myWorries,
+      myWorries: share && text.trim() ? [{ id: uid('w'), tag: '수업 고민', title: text.trim().slice(0, 36) + (text.length > 36 ? '…' : ''), body: text.trim(), author: `익명의 ${anonBand(st.s.profile)} 선생님`, date: TODAY, likes: 0, solved: false, mine: true, comments: [] }, ...s.myWorries] : s.myWorries,
     }));
     st.award('활동', 30, '성장 설계 완료');
     st.toast('성장 목표를 저장했어요 · 성장 여정에 연결했어요');
@@ -83,7 +83,7 @@ export default function GrowthDesign() {
 
   return (
     <div className="container">
-      <PageHead crumbs={['성장', '성장 설계']} code="1.1 · 성장 출발점 찾기 · 성장 목표 세우기" title="성장 설계" desc="누가 매기는 평가가 아니라 “어떤 교사가 되고 싶은가”를 스스로 묻고, 지금 서 있는 자리에서 내 경험을 바탕으로 성장을 설계합니다." />
+      <PageHead crumbs={['성장', '성장 설계']} code="1.1 · 성장 출발점 찾기 · 성장 목표 세우기" title="성장 설계" desc="남이 매기는 평가가 아니라 “어떤 교사가 되고 싶은가”를 스스로 묻고 지금 서 있는 자리에서 내 경험을 바탕으로 성장을 설계합니다." />
 
       <ol className="stepper">
         {STEPS.map((s, i) => (

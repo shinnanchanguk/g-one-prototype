@@ -27,8 +27,9 @@ for f in fs:
 res=[]
 for c in cities.values():
     xs=[p[0] for p in c['pts']]; ys=[p[1] for p in c['pts']]
-    res.append({'name':c['name'],'d':' '.join(c['paths']),'cx':round(sum(xs)/len(xs),1),'cy':round(sum(ys)/len(ys),1)})
+    res.append({'name':c['name'],'cx':round(sum(xs)/len(xs),1),'cy':round(sum(ys)/len(ys),1)})
 res.sort(key=lambda r:r['name'])
-open(out,'w').write('// 경기도 31개 시군 경계(통계청 2013, southkorea-maps 단순화본)에서 생성\n'
-  f'export const MAP_W = {W};\nexport const MAP_H = {H};\nexport const CITIES = '+json.dumps(res,ensure_ascii=False)+';\n')
+# 지도 보기를 뺀 뒤로는 시군 중심 좌표만 쓴다(이웃 지원청 고르기·저장값 검사)
+open(out,'w').write('// 경기도 31개 시군 중심 좌표(통계청 2013 경계, southkorea-maps 단순화본에서 scripts/build-map.py 로 생성). 이웃 지원청 고르기와 저장값 검사에 쓴다.\n'
+  'export const CITIES = '+json.dumps(res,ensure_ascii=False,separators=(',',':'))+';\n')
 print(len(res), W, H)

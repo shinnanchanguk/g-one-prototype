@@ -292,7 +292,7 @@ export function WorryItem({ w, onOpenDetail }) {
       <div className="witem__body">
         <div className="witem__top">
           <Link to={`/together/worries/${w.id}`} className="witem__title" onClick={onOpenDetail}>{w.title}</Link>
-          <Chip tone={w.solved ? 'green' : 'orange'}>{w.solved ? '해결됨' : `댓글 ${comments.length}`}</Chip>
+          <Chip tone={w.solved ? 'green' : 'ink'}>{w.solved ? '해결됨' : `댓글 ${comments.length}`}</Chip>
         </div>
         <p className="witem__text">{w.body}</p>
         <div className="witem__foot">

@@ -328,8 +328,6 @@ span.avatar.avatar { color: #fff; }
 .pill-5 { width: 86%; bottom: 7%; right: -4%; background: linear-gradient(90deg, var(--orange), #111 40%, #fff 72%); display: flex; justify-content: flex-end; overflow: hidden; }
 .checker { width: 96px; height: 100%; background-image: conic-gradient(#111 90deg, #fff 90deg 180deg, #111 180deg 270deg, #fff 270deg); background-size: 32px 32px; border-left: 1px solid #111; }
 
-/* ── 지도 ── */
-
 .olist { display: flex; flex-direction: column; }
 .olist li > button, .olist li > a { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 11px 6px; border-bottom: 1px dashed var(--line); border-radius: 8px; }
 .olist li > button:hover, .olist li > a:hover, .olist li.is-sel > button { background: var(--bg-2); }
@@ -792,16 +790,14 @@ span.avatar.avatar { color: #fff; }
 .expert__foot { font-size: 12.5px; color: var(--ink-2); background: var(--bg-2); border-radius: 10px; padding: 8px 10px; }
 .expert__react { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: var(--ink-2); }
 
-/* 시안 바꾸기 */
+/* 보기 고르기(공개수업 한 달 달력 / 맞춤 피드) */
 .vpick { display: flex; flex-wrap: wrap; gap: 6px; }
 .vpick button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: var(--pill); background: var(--bg-2); font-weight: 650; font-size: 13.5px; color: var(--ink-2); white-space: nowrap; }
 .vpick button:hover { background: #e2dccf; }
 .vpick button.is-on { background: var(--ink); color: #fff; }
 
-/* 첫 화면 A안 */
+/* 첫 화면 새 글 알림 */
 .newpill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; align-self: center; background: var(--orange); color: #fff; font-weight: 700; font-size: 13px; padding: 7px 14px; border-radius: var(--pill); animation: up 0.3s; }
-
-/* 첫 화면 B안 */
 
 /* 공개수업 */
 .scope { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: var(--pill); font-size: 11.5px; font-weight: 700; white-space: nowrap; border: 1px solid transparent; }
@@ -1027,7 +1023,6 @@ img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
 
 /* 강사 인력풀 */
 .incard__basis { display: flex; flex-wrap: wrap; gap: 6px; }
-.grid2--modal .incard__basis { margin-bottom: 12px; }
 .grid2--modal .incard__basis .vbadge { margin-bottom: 0; }
 .incard__topics { display: flex; flex-direction: column; gap: 8px; }
 .incard__topics li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; font-size: 14px; }
@@ -1043,3 +1038,10 @@ img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
 .reviews li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
 .reviews p { grid-column: 1 / -1; font-size: 13.5px; color: var(--ink-2); }
 .mtr__memo { font-size: 13.5px; color: var(--ink-2); background: var(--bg-2); border-radius: 12px; padding: 8px 12px; }
+
+/* 멘토·강사 상세 창 왼쪽 열: 덩어리 사이를 같은 간격으로 */
+.modal__col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.modal__col > * { margin-top: 0; margin-bottom: 0; }
+.field__static { font-size: 14.5px; font-weight: 600; color: var(--ink-2); padding: 10px 0; }
+/* 좁은 화면에서 날짜를 고르면 내려가는 목록이 머리말에 가리지 않게 */
+.calwrap__side { scroll-margin-top: 84px; }

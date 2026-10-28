@@ -27,7 +27,7 @@ function HomeWorry({ w, fresh }) {
       <button className="hworry__row" onClick={() => setOpen(!open)} aria-expanded={open}>
         <Avatar name={w.author} size={34} />
         <span className="hworry__main">
-          <span className="hworry__title">{fresh && <Chip tone="orange" solid>방금</Chip>}<b>{w.title}</b><Chip tone={w.solved ? 'green' : 'orange'}>{w.solved ? '해결됨' : `댓글 ${list.length}`}</Chip></span>
+          <span className="hworry__title">{fresh && <Chip tone="orange" solid>방금</Chip>}<b>{w.title}</b><Chip tone={w.solved ? 'green' : 'ink'}>{w.solved ? '해결됨' : `댓글 ${list.length}`}</Chip></span>
           <span className="hworry__text">{w.body}</span>
           <span className="hworry__meta"><Icon name="heart" size={13} />{w.likes} <Icon name="message" size={13} />{list.length} <i /> {shortDate(w.date)}</span>
         </span>

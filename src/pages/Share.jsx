@@ -10,7 +10,7 @@ import { uid, useStore } from '../store.jsx';
 
 // 보기 두 가지. TF 의견대로 한 달 달력과 맞춤 피드를 고르게 하고, 처음에는 더 직관적인 한 달 달력을 연다.
 const VIEWS = [
-  { v: 'cal', label: '한 달 달력', icon: 'calendar', note: '날짜를 누르면 그날 공개수업이 옆에 펼쳐져요.' },
+  { v: 'cal', label: '한 달 달력', icon: 'calendar', note: '날짜를 누르면 그날 공개수업을 모아 보여 줘요.' },
   { v: 'feed', label: '맞춤 피드', icon: 'list', note: '우리 학교 동료장학, 우리 지원청, 같은 교과, 도 단위 순으로 묶어 내게 맞는 것부터 보여 줘요.' },
 ];
 const BAND_OPTS = ['전체 학교급', ...BANDS];
@@ -58,12 +58,14 @@ function CalView({ list, onOpen }) {
   const first = [...list].filter((o) => o.date >= TODAY).sort((a, b) => a.date.localeCompare(b.date))[0]?.date ?? TODAY;
   const [ym, setYm] = useState([Number(first.slice(0, 4)), Number(first.slice(5, 7))]);
   const [day, setDay] = useState(first);
+  // 좁은 화면에서는 목록이 달력 아래에 쌓이므로 날짜를 고르면 그 목록으로 내려간다
+  const pick = (d) => { setDay(d); if (window.matchMedia('(max-width: 1180px)').matches) requestAnimationFrame(() => document.querySelector('.calwrap__side')?.scrollIntoView({ behavior: 'smooth', block: 'start' })); };
   const move = (d) => setYm(([y, m]) => { const n = m + d; return n < 1 ? [y - 1, 12] : n > 12 ? [y + 1, 1] : [y, n]; });
   const dayList = list.filter((o) => o.date === day);
   return (
     <div className="calwrap">
       <Panel>
-        <MonthCalendar year={ym[0]} month={ym[1]} items={list} onOpen={onOpen} onMove={move} selected={day} onPick={setDay} />
+        <MonthCalendar year={ym[0]} month={ym[1]} items={list} onOpen={onOpen} onMove={move} selected={day} onPick={pick} />
         <ul className="legend"><li><ScopeChip scope="도" />도 단위</li><li><ScopeChip scope="지원청" />지원청 단위</li><li><ScopeChip scope="학교" />우리 학교만</li></ul>
       </Panel>
       <Panel className="calwrap__side" title={fmtDate(day)} code={`그날 공개수업 ${dayList.length}건`}>
