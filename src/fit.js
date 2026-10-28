@@ -83,14 +83,8 @@ export const SCOPE_HELP = {
   도: '경기도 모든 선생님이 보고 신청할 수 있어요.',
 };
 
-// 지도 좌표로 잰 시·군 중심 사이 거리(가로 800칸이 약 150km)
+// 시·군 중심 좌표로 이웃 지원청을 고른다
 const XY = Object.fromEntries(CITIES.map((c) => [c.name, [c.cx, c.cy]]));
-const KM = 0.19;
-export const distKm = (a, b) => {
-  const p = XY[a], q = XY[b];
-  if (!p || !q) return 0;
-  return Math.round(Math.hypot(p[0] - q[0], p[1] - q[1]) * KM);
-};
 const officeXY = (name) => {
   const o = OFFICES.find((x) => x.name === name);
   const pts = o.cities.map((c) => XY[c]).filter(Boolean);

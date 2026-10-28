@@ -9,7 +9,7 @@ import { Avatar, num } from './ui.jsx';
 
 export const MENU = [
   { key: 'growth', label: '성장', icon: 'sprout', tone: 'green', sub: '나의 성장을 위한 공간', items: [
-    { to: '/growth/design', code: '1.1', label: '성장 설계', desc: '진단하고 목표 세우기' },
+    { to: '/growth/design', code: '1.1', label: '성장 설계', desc: '성장 출발점 찾고 목표 세우기' },
     { to: '/growth/journey', code: '1.2', label: '성장 여정', desc: '포트폴리오 · 뱃지 앨범' },
   ] },
   { key: 'learn', label: '배움', icon: 'book', tone: 'blue', sub: '함께 배우는 수업 이야기', items: [
@@ -24,11 +24,12 @@ export const MENU = [
     { to: '/share/outcomes', code: '3.3', label: '성과나눔', desc: '선도 · 실천학교 · 연구년' },
   ] },
   { key: 'together', label: '동행', icon: 'users', tone: 'purple', sub: '함께하는 교육공동체', items: [
-    { to: '/together/worries', code: '4.1', label: '고민 남기기', desc: '동료에게 의견 구하기' },
+    { to: '/together/worries', code: '4.1', label: '쫑알쫑알', desc: '동료와 편하게 이야기 나누기' },
     { to: '/together/mentors', code: '4.1', label: '멘토 찾기', desc: '분야 · 권역별 멘토 신청' },
+    { to: '/together/instructors', code: '4.1', label: '강사 인력풀', desc: '검증된 강사를 학교 연수에 초빙' },
     { to: '/together/mentoring', code: '4.2', label: '멘토링 현황', desc: '나의 멘토링 과정' },
   ] },
-  { key: 'info', label: '안내', icon: 'info', tone: 'orange', sub: '바로 찾는 교육 정보', items: [
+  { key: 'info', label: '안내', icon: 'info', tone: 'orange', sub: '바로 찾는 교육 정보', util: true, items: [
     { to: '/info/about', code: '5.1', label: '소개', desc: '플랫폼과 서비스' },
     { to: '/info/notices', code: '5.2', label: '공지사항', desc: '주요 공지와 소식' },
     { to: '/info/faq', code: '5.3', label: 'FAQ', desc: '자주 묻는 질문' },
@@ -129,7 +130,7 @@ export default function Layout() {
           </Link>
           <nav className="gnb" aria-label="주 메뉴">
             {MENU.map((m) => (
-              <div key={m.key} className={`gnb__item ${shut === m.key ? 'is-shut' : ''}`} onMouseEnter={() => setShut((k) => (k === m.key ? null : k))} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))} onKeyDown={(e) => { if (e.key === 'Escape') pick(m.key); }}>
+              <div key={m.key} className={`gnb__item ${m.util ? 'gnb__item--util' : ''} ${shut === m.key ? 'is-shut' : ''}`} onMouseEnter={() => setShut((k) => (k === m.key ? null : k))} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))} onKeyDown={(e) => { if (e.key === 'Escape') pick(m.key); }}>
                 <NavLink to={m.items[0].to} onPointerDown={(e) => { pointer.current = e.pointerType; }} onClick={() => { const t = pointer.current; pointer.current = 'mouse'; if (t !== 'touch') pick(m.key); }} className={({ isActive }) => `gnb__link ${loc.pathname.startsWith(`/${m.key}`) || isActive ? 'is-on' : ''}`}>
                   <span className={`gnb__ico tone-${m.tone}`}><Icon name={m.icon} size={18} /></span>
                   <span className="gnb__txt"><b>{m.label}</b><small>{m.sub}</small></span>

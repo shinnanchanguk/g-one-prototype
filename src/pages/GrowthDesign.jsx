@@ -8,7 +8,7 @@ import { trainingState } from '../components/cards.jsx';
 import { uid, useStore } from '../store.jsx';
 
 export const AREA_CAT = Object.fromEntries(AREAS.map((a) => [a.key, a.cat]));
-const STEPS = ['고민 입력', '핵심 활동 진단', 'AI 성장 키워드', '도움 찾기', '새 성장 목표'];
+const STEPS = ['고민 입력', '성장 출발점 찾기', 'AI 성장 키워드', '도움 찾기', '새 성장 목표'];
 const SAMPLE = '수학 시간에 발표하는 아이들이 늘 같아요. 조용한 아이들도 스스로 질문하고 생각을 나누는 수업을 만들고 싶습니다. 요즘은 업무에 지쳐서 수업 준비할 여유도 부족해요.';
 
 function analyze(text, scores) {
@@ -27,8 +27,7 @@ export default function GrowthDesign() {
   const [step, setStep] = useState(0);
   const [text, setText] = useState('');
   const [share, setShare] = useState(true);
-  const [scores, setScores] = useState(() => ({ ...st.s.quickDiag }));
-  const quickN = Object.keys(st.s.quickDiag).filter((k) => AREAS.some((a) => a.key === k)).length;
+  const [scores, setScores] = useState({});
   const [thinking, setThinking] = useState(false);
   const [compare, setCompare] = useState(true);
   const [need, setNeed] = useState('');
@@ -84,7 +83,7 @@ export default function GrowthDesign() {
 
   return (
     <div className="container">
-      <PageHead crumbs={['성장', '성장 설계']} code="1.1 · 성장 목표 세우기 · 성장 유형 진단하기" title="성장 설계" desc="점수로 평가받는 진단이 아니라, “어떤 교사가 되고 싶은가”를 스스로 묻고 경험을 바탕으로 성장을 설계합니다." />
+      <PageHead crumbs={['성장', '성장 설계']} code="1.1 · 성장 출발점 찾기 · 성장 목표 세우기" title="성장 설계" desc="누가 매기는 평가가 아니라 “어떤 교사가 되고 싶은가”를 스스로 묻고, 지금 서 있는 자리에서 내 경험을 바탕으로 성장을 설계합니다." />
 
       <ol className="stepper">
         {STEPS.map((s, i) => (
@@ -100,23 +99,22 @@ export default function GrowthDesign() {
         <Panel title="가장 깊은 수업 고민이나 도전하고 싶은 배움은 무엇인가요?" code="STEP 1" desc="서술형으로 편하게 적어 주세요. AI가 성장 키워드를 찾아 드려요.">
           <textarea className="ta" rows={6} value={text} onChange={(e) => setText(e.target.value)} placeholder="예) 학생들이 스스로 질문하는 수업을 만들고 싶은데, 어디서부터 바꿔야 할지 모르겠어요." aria-label="고민 서술" />
           <div className="row-between">
-            <label className="check"><input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} /> 이 고민을 <b>고민 남기기</b>에도 익명으로 올려 동료 의견 받기</label>
+            <label className="check"><input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} /> 이 고민을 <b>쫑알쫑알</b>에도 익명으로 올려 동료 의견 받기</label>
             <button className="btn btn--line btn--sm" onClick={() => setText(SAMPLE)}>예시 문장 넣어 보기</button>
           </div>
         </Panel>
       )}
 
       {step === 1 && (
-        <Panel title="핵심 교육활동 진단" code="STEP 2" desc="10개 영역을 1~4점으로 골라 주세요. 지금 모습 그대로가 좋아요.">
-          {quickN > 0 && <p className="note"><Icon name="check" size={15} /> 첫 화면에서 답한 {quickN}개 영역은 미리 채워 두었어요. 남은 영역만 골라 주세요.</p>}
+        <Panel title="성장 출발점 찾기" code="STEP 2" desc="10개 영역마다 지금 내 모습에 가장 가까운 것을 골라 주세요. 있는 그대로가 좋아요.">
           <div className="diag">
             {AREAS.map((a, i) => (
               <div key={a.key} className="diag__q">
                 <div className="diag__txt"><span className="mono">{String(i + 1).padStart(2, '0')} · {a.name}</span><p>{AREA_QUESTIONS[a.key]}</p></div>
                 <div className="diag__scale" role="radiogroup" aria-label={a.name}>
                   {SCALE.map((lbl, v) => (
-                    <button key={v} role="radio" aria-checked={scores[a.key] === v + 1} className={scores[a.key] === v + 1 ? 'is-on' : ''} onClick={() => setScores({ ...scores, [a.key]: v + 1 })} title={lbl}>
-                      <b>{v + 1}</b><span>{lbl.slice(2)}</span>
+                    <button key={v} role="radio" aria-checked={scores[a.key] === v + 1} className={scores[a.key] === v + 1 ? 'is-on' : ''} onClick={() => setScores({ ...scores, [a.key]: v + 1 })} title={lbl.slice(2)}>
+                      <span className="lvl" aria-hidden>{SCALE.map((_, j) => <i key={j} className={j <= v ? 'is-on' : ''} />)}</span><span>{lbl.slice(2)}</span>
                     </button>
                   ))}
                 </div>
@@ -124,7 +122,7 @@ export default function GrowthDesign() {
             ))}
           </div>
           <div className="row-between">
-            <span className="mono">{Object.keys(scores).length} / 10 영역 응답</span>
+            <span className="mono">{Object.keys(scores).length} / 10 영역 골랐어요</span>
             <button className="btn btn--line btn--sm" onClick={() => setScores(Object.fromEntries(AREAS.map((a, i) => [a.key, [3, 3, 2, 3, 2, 3, 3, 3, 2, 1][i]])))}>예시 응답 채우기</button>
           </div>
         </Panel>
@@ -134,7 +132,7 @@ export default function GrowthDesign() {
         <div className="grid2">
           <Panel dark title="AI 성장 키워드 분석" code="STEP 3">
             {thinking ? (
-              <div className="ai-think"><Icon name="spark" size={28} className="spin" /><p>고민 글과 진단 결과를 읽고 있어요…</p></div>
+              <div className="ai-think"><Icon name="spark" size={28} className="spin" /><p>고민 글과 고른 답을 읽고 있어요…</p></div>
             ) : (
               <div className="ai-result">
                 <span className="mono c-orange">나의 성장 유형</span>
@@ -142,15 +140,15 @@ export default function GrowthDesign() {
                 <p className="mono">찾은 키워드</p>
                 <div className="chips">{res.words.map((w) => <span key={w} className="chip chip--glass">#{w}</span>)}</div>
                 <p className="mono">강점 영역</p>
-                <p>{res.strong.name} ({scores[res.strong.key]}점)</p>
+                <p>{res.strong.name}</p>
                 <p className="mono">함께 키우면 좋을 영역</p>
-                <div className="chips">{res.low.map((a) => <span key={a.key} className="chip chip--glass">{a.name} {scores[a.key]}점</span>)}</div>
+                <div className="chips">{res.low.map((a) => <span key={a.key} className="chip chip--glass">{a.name}</span>)}</div>
                 <p className="ai-note"><Icon name="info" size={14} /> 프로토타입에서는 낱말 규칙으로 흉내 냅니다. 실제 서비스에서는 AI 키워드 추출로 바뀝니다.</p>
               </div>
             )}
           </Panel>
-          <Panel title="10개 영역 레이더 · 시계열 비교" code="진단 결과">
-            <label className="check"><input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> 지난 진단과 겹쳐 보기</label>
+          <Panel title="10개 영역 한눈에 보기" code="나의 성장 출발점">
+            <label className="check"><input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> 지난 기록과 겹쳐 보기</label>
             {(() => {
               const series = [...(compare ? history.slice(-2) : []), { label: '오늘', scores }];
               return (
@@ -170,7 +168,7 @@ export default function GrowthDesign() {
           <div className="recs">
             {recs.map((r) => (
               <div key={r.area.key} className="rec">
-                <p className="rec__head"><span className="mono">함께 키울 영역</span><b>{r.area.name}</b><Chip tone="orange">{scores[r.area.key]}점</Chip></p>
+                <p className="rec__head"><span className="mono">함께 키울 영역</span><b>{r.area.name}</b></p>
                 <ul>
                   {r.trainings.map((t) => <li key={t.id}><Icon name="school" size={15} className="c-blue" /><Link to={`/learn/trainings?q=${encodeURIComponent(t.title)}`}>{t.title}</Link><span className="mono">{t.type}연수 · {t.hours ? `${t.hours}시간` : '인정시간 없음'}</span></li>)}
                   {r.modules.map((m) => <li key={m.id}><Icon name="layers" size={15} className="c-purple" /><Link to="/learn/modules">{m.title}</Link><span className="mono">배움 모듈</span></li>)}
@@ -208,13 +206,13 @@ export default function GrowthDesign() {
           : <button className="btn btn--orange" disabled={!canNext} onClick={save}><Icon name="flag" size={16} />목표 저장하고 성장 여정에 연결</button>}
       </div>
 
-      <Panel title="지난 진단 기록" code="시계열" className="mt">
+      <Panel title="지난 성장 출발점" code="그때의 고민과 성장 유형" className="mt">
         <div className="hist">
           {history.map((h, i) => (
             <div key={h.date + i} className="hist__item">
               <span className="mono">{h.label}</span>
-              <b>평균 {(AREAS.reduce((a, x) => a + (h.scores[x.key] ?? 0), 0) / 10).toFixed(1)}점</b>
-              {h.type && <span>{h.type}</span>}
+              <b>{h.type ?? '성장 유형을 아직 찾지 않았어요'}</b>
+              {h.worry && <span className="hist__worry">{h.worry}</span>}
             </div>
           ))}
         </div>

@@ -39,7 +39,7 @@ function Roadmap() {
           </article>
         );
       })}
-      <Link to="/growth/design" className="goal goal--new"><Icon name="plus" size={22} /><b>새 성장 목표 세우기</b><span>성장 설계에서 진단하고 목표를 더해요</span></Link>
+      <Link to="/growth/design" className="goal goal--new"><Icon name="plus" size={22} /><b>새 성장 목표 세우기</b><span>성장 설계에서 출발점을 찾고 목표를 더해요</span></Link>
     </div>
   );
 }

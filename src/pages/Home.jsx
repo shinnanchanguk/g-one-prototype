@@ -1,10 +1,10 @@
-// 첫 화면: 성장 콘텐츠와 고민 나눔을 한눈에(TF 확정안, 개선 제안서 제안 1 시안 응용)
+// 첫 화면: 성장 콘텐츠와 쫑알쫑알을 한눈에(TF 확정안, 개선 제안서 제안 1 시안 응용)
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DELIVERY_LABEL, trainingState } from '../components/cards.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Panel, Tabs, num, shortDate } from '../components/ui.jsx';
-import { AREA_QUESTIONS, AREAS, BADGES, MATERIALS, ME, MODULES, SCALE, TODAY, TRAININGS, WORRIES, expertAreas } from '../data/seed.js';
+import { BADGES, MATERIALS, ME, MODULES, TODAY, TRAININGS, WORRIES, expertAreas } from '../data/seed.js';
 import { sortByProfile } from '../fit.js';
 import { matCat, thumbsFor } from '../thumbs.js';
 import { uid, useStore } from '../store.jsx';
@@ -18,16 +18,16 @@ function HomeWorry({ w, fresh }) {
     e.preventDefault();
     if (!text.trim()) return;
     st.patch((s) => ({ worryComments: { ...s.worryComments, [w.id]: [...(s.worryComments[w.id] ?? []), { id: uid('k'), author: ME.name, date: TODAY, body: text.trim(), helpful: 0 }] } }));
-    st.award('상호작용', 5, '고민에 답변 남김');
+    st.award('상호작용', 5, '쫑알쫑알 댓글 남김');
     setText('');
-    st.toast('답변을 남겼어요');
+    st.toast('댓글을 남겼어요');
   };
   return (
     <div className={`hworry ${open ? 'is-open' : ''}`}>
       <button className="hworry__row" onClick={() => setOpen(!open)} aria-expanded={open}>
         <Avatar name={w.author} size={34} />
         <span className="hworry__main">
-          <span className="hworry__title">{fresh && <Chip tone="orange" solid>방금</Chip>}<b>{w.title}</b><Chip tone={w.solved ? 'green' : 'orange'}>{w.solved ? '해결됨' : `답변 ${list.length}`}</Chip></span>
+          <span className="hworry__title">{fresh && <Chip tone="orange" solid>방금</Chip>}<b>{w.title}</b><Chip tone={w.solved ? 'green' : 'orange'}>{w.solved ? '해결됨' : `댓글 ${list.length}`}</Chip></span>
           <span className="hworry__text">{w.body}</span>
           <span className="hworry__meta"><Icon name="heart" size={13} />{w.likes} <Icon name="message" size={13} />{list.length} <i /> {shortDate(w.date)}</span>
         </span>
@@ -39,10 +39,10 @@ function HomeWorry({ w, fresh }) {
             <div key={c.id} className="hworry__c"><b>{c.author}{c.badge && <Chip tone="purple">{c.badge}</Chip>}</b><span>{c.body}</span></div>
           ))}
           <form onSubmit={send} className="inline-form">
-            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="따뜻한 한마디를 남겨 주세요" aria-label="답변 입력" />
-            <button className="btn btn--sm btn--green" type="submit"><Icon name="send" size={14} />답변</button>
+            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="따뜻한 한마디를 남겨 주세요" aria-label="댓글 입력" />
+            <button className="btn btn--sm btn--green" type="submit"><Icon name="send" size={14} />댓글</button>
           </form>
-          <Link className="more" to={`/together/worries/${w.id}`}>전체 답변 보기 <Icon name="right" size={13} /></Link>
+          <Link className="more" to={`/together/worries/${w.id}`}>댓글 모두 보기 <Icon name="right" size={13} /></Link>
         </div>
       )}
     </div>
@@ -63,47 +63,19 @@ function AskForm({ onPosted }) {
     if (!draft.trim()) return;
     const w = { id: uid('w'), tag: '기타', title: draft.trim().slice(0, 40), body: draft.trim(), author: ME.name, date: TODAY, likes: 0, solved: false, mine: true, comments: [] };
     st.patch((x) => ({ myWorries: [w, ...x.myWorries] }));
-    st.award('활동', 5, '고민 남기기');
+    st.award('활동', 5, '쫑알쫑알 글 남기기');
     setDraft('');
-    st.toast('고민을 남겼어요 · 동료 선생님들의 답변을 기다려 보세요');
+    st.toast('글을 남겼어요 · 동료 선생님들의 댓글을 기다려 보세요');
     onPosted?.();
   };
   return (
     <form className="hp__ask" onSubmit={post}>
       <Avatar name={ME.name} size={34} />
-      <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="교육 현장의 고민을 남겨 주세요." rows={2} aria-label="고민 입력" />
+      <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="수업 이야기, 고민, 작은 자랑까지 편하게 남겨 주세요." rows={2} aria-label="쫑알쫑알 글 입력" />
       <button className="btn btn--green btn--sm" type="submit">등록</button>
     </form>
   );
 }
-
-function QuickDiag({ areaKey }) {
-  const st = useStore();
-  const area = AREAS.find((a) => a.key === areaKey);
-  const mine = st.s.quickDiag[areaKey];
-  const n = Object.keys(st.s.quickDiag).length;
-  const answer = (v) => {
-    st.patch((s) => ({ quickDiag: { ...s.quickDiag, [areaKey]: v } }));
-    st.toast(`${area.name} 영역 답을 성장 설계에 담았어요 · 10개 중 ${mine ? n : n + 1}개`);
-  };
-  return (
-    <div className="qdiag">
-      <div className="qdiag__q">
-        <span className="mono">한 문항 진단 · {area.name}</span>
-        <p>{AREA_QUESTIONS[areaKey]}</p>
-      </div>
-      <div className="diag__scale" role="radiogroup" aria-label={`${area.name} 진단`}>
-        {SCALE.map((lbl, v) => (
-          <button key={v} role="radio" aria-checked={mine === v + 1} className={mine === v + 1 ? 'is-on' : ''} onClick={() => answer(v + 1)} title={lbl}>
-            <b>{v + 1}</b><span>{lbl.slice(2)}</span>
-          </button>
-        ))}
-      </div>
-      <p className="qdiag__foot">10개 영역 중 {n}개 답했어요. 처음부터 열 문항을 다 풀지 않아도 돼요. <Link to="/growth/design" className="linkbtn">성장 설계에서 이어 보기</Link></p>
-    </div>
-  );
-}
-
 
 // 고민별 입구. 녹음의 "수업, 생활지도, AI 디지털 도구, 마음 돌보기, 업무 효율화"
 const LANES = [
@@ -157,11 +129,11 @@ function Worries() {
   const rest = [...s.myWorries, ...WORRIES.filter((w) => !w.live)];
   const list = [...fresh, ...(sort === '공감 많은 순' ? [...rest].sort((a, b) => b.likes - a.likes) : rest)].slice(0, 4);
   return (
-    <Panel className="home__side" tone="purple" icon="message" title="고민 나눔" code="동행 · 4.1" more="/together/worries">
+    <Panel className="home__side" tone="purple" icon="message" title="쫑알쫑알" code="동행 · 4.1" more="/together/worries">
       <AskForm onPosted={() => setSort('최신순')} />
       <div className="row-between">
         <Tabs size="sm" value={sort} onChange={setSort} items={['공감 많은 순', '최신순']} />
-        {live && !seen && <button className="newpill" onClick={() => { setSeen(true); setSort('최신순'); }}><Icon name="refresh" size={14} />새 고민 1개</button>}
+        {live && !seen && <button className="newpill" onClick={() => { setSeen(true); setSort('최신순'); }}><Icon name="refresh" size={14} />새 글 1개</button>}
       </div>
       <div className="hworries">{list.map((w) => <HomeWorry key={w.id} w={w} fresh={!!w.live || (w.mine && w.date === TODAY)} />)}</div>
     </Panel>
@@ -193,7 +165,7 @@ export default function Home() {
         <div>
           <span className="mono c-orange">{p.level}{p.subject ? ` · ${p.subject}` : ''} 선생님께 맞춘 성장 콘텐츠</span>
           <h1>오늘은 무엇을 둘러볼까요?</h1>
-          <p>설문 없이 바로 보세요. 고민별 입구를 누르면 그때 한 가지만 여쭤볼게요.</p>
+          <p>설문 없이 바로 보세요. 고민별 입구를 누르면 그에 맞는 콘텐츠를 모아 보여 드려요.</p>
         </div>
         <form className="home__search" onSubmit={search} role="search">
           <Icon name="search" size={18} />
@@ -201,6 +173,14 @@ export default function Home() {
           <button className="btn btn--dark btn--sm" type="submit">찾기</button>
         </form>
       </section>
+
+      {/* 교감 선생님 의견: 스크롤 없이 보이게 검색 줄 바로 아래로 올림 */}
+      <div className="home__soft">
+        <span className="home__soft-ic tone-green"><Icon name="compass" size={18} /></span>
+        <span>나에게 맞는 성장 콘텐츠를 더 정확히 찾고 싶다면 <b>성장 설계</b>를 해 보세요.</span>
+        <Link to="/growth/journey" className="mono home__mine">내 성장 여정 · 뱃지 {got}개 · 전문가 {expertAreas().length}개 영역</Link>
+        <Link to="/growth/design" className="btn btn--sm btn--green">3분 성장 설계</Link>
+      </div>
 
       <div className="home__main">
         <section className="home__contents">
@@ -216,7 +196,6 @@ export default function Home() {
               );
             })}
           </div>
-          {cur && <QuickDiag areaKey={cur.key} />}
           <div className="row-between">
             <h2 className="home__h2">{cur ? `${cur.label} · 볼 만한 콘텐츠` : '이번 주 선생님들이 많이 본 성장 콘텐츠'}</h2>
             <Tabs size="sm" value={sort} onChange={setSort} items={['나에게 맞는 순', '인기순']} />
@@ -227,12 +206,6 @@ export default function Home() {
         <Worries />
       </div>
 
-      <div className="home__soft">
-        <span className="home__soft-ic tone-green"><Icon name="compass" size={18} /></span>
-        <span>나에게 맞는 성장 컨텐츠를 더 정확히 찾고 싶다면 <b>성장 설계</b>를 해 보세요.</span>
-        <Link to="/growth/journey" className="mono home__mine">내 성장 여정 · 뱃지 {got}개 · 전문가 {expertAreas().length}개 영역</Link>
-        <Link to="/growth/design" className="btn btn--sm btn--green">3분 성장 설계</Link>
-      </div>
     </div>
   );
 }

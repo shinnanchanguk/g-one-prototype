@@ -8,7 +8,7 @@ import Home from './pages/Home.jsx';
 import { About, Faq, NotFound, Notices, Search } from './pages/Info.jsx';
 import { MaterialDetail, Materials, Modules, Rooms, Trainings } from './pages/Learn.jsx';
 import { Communities, CommunityDetail, OpenClasses, Outcomes } from './pages/Share.jsx';
-import { Mentoring, Mentors, Worries, WorryDetail } from './pages/Together.jsx';
+import { Instructors, Mentoring, Mentors, Worries, WorryDetail } from './pages/Together.jsx';
 import { StoreProvider } from './store.jsx';
 import './styles.css';
 
@@ -48,6 +48,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="together/worries" element={<Worries />} />
             <Route path="together/worries/:id" element={<WorryDetail />} />
             <Route path="together/mentors" element={<Mentors />} />
+            <Route path="together/instructors" element={<Instructors />} />
             <Route path="together/mentoring" element={<Mentoring />} />
             <Route path="info/about" element={<About />} />
             <Route path="info/notices" element={<Notices />} />

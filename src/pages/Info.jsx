@@ -4,7 +4,7 @@ import { CommunityCard, MaterialCard, ModuleCard, OpenClassCard, OpenClassModal,
 import Icon from '../components/Icon.jsx';
 import { MENU } from '../components/Layout.jsx';
 import { Chip, Empty, PageHead, Panel, SearchBox, fmtDate } from '../components/ui.jsx';
-import { COMMUNITIES, FAQ, MATERIALS, MENTORS, MODULES, NOTICES, OPEN_CLASSES, OUTCOMES, TRAININGS, WORRIES } from '../data/seed.js';
+import { COMMUNITIES, FAQ, INSTRUCTORS, MATERIALS, MENTORS, MODULES, NOTICES, OPEN_CLASSES, OUTCOMES, TRAININGS, WORRIES } from '../data/seed.js';
 import { classAccess } from '../fit.js';
 import { matCat, thumbsFor } from '../thumbs.js';
 import { useStore } from '../store.jsx';
@@ -117,6 +117,7 @@ export function Search() {
     classes: [...st.s.myClasses, ...OPEN_CLASSES].filter((x) => classAccess(x, st.s.profile) !== 'hidden' && has(x.topic + x.subject + x.school)),
     worries: [...st.s.myWorries, ...WORRIES].filter((x) => has(x.title + x.body)),
     mentors: MENTORS.filter((x) => has(x.name + x.intro + x.fields.join(' '))),
+    instructors: INSTRUCTORS.filter((x) => has(x.topics.map((t) => t.title).join(' ') + x.basis.join(' '))),
     outcomes: OUTCOMES.filter((x) => has(x.title + x.summary)),
   };
   const total = Object.values(r).reduce((a, x) => a + x.length, 0);
@@ -124,7 +125,7 @@ export function Search() {
   const matImgs = thumbsFor(r.materials, matCat, 3);
   return (
     <div className="container">
-      <PageHead title="통합 검색" desc="연수, 배움 모듈, 교육자료, 공동체, 공개수업, 고민, 멘토, 성과를 한 번에 찾아요." />
+      <PageHead title="통합 검색" desc="연수, 배움 모듈, 교육자료, 공동체, 공개수업, 쫑알쫑알 글, 멘토, 강사, 성과를 한 번에 찾아요." />
       <SearchBox value={q} onChange={(v) => setSp(v ? { q: v } : {})} placeholder="예) AI, 질문, 루브릭, 마음" />
       {!q && <div className="chips mt">{['AI', '질문', '평가', '마음', '수학', '생활교육'].map((k) => <button key={k} className="chip chip--btn" onClick={() => setSp({ q: k })}>#{k}</button>)}</div>}
       {q && <p className="mono mt">「{q}」 검색 결과 {total}건</p>}
@@ -134,8 +135,9 @@ export function Search() {
       {r.materials.length > 0 && <Panel title="교육자료" code={`${r.materials.length}`}><div className="mgrid">{r.materials.map((x, i) => <MaterialCard key={x.id} m={x} thumb={matImgs[i]} />)}</div></Panel>}
       {r.comms.length > 0 && <Panel title="공동체" code={`${r.comms.length}`}><div className="cgrid">{r.comms.map((x) => <CommunityCard key={x.id} c={x} />)}</div></Panel>}
       {r.classes.length > 0 && <Panel title="공개수업" code={`${r.classes.length}`}><div className="oclist">{r.classes.map((x) => <OpenClassCard key={x.id} o={x} onOpen={setO} />)}</div></Panel>}
-      {r.worries.length > 0 && <Panel title="고민" code={`${r.worries.length}`}><ul className="olist">{r.worries.map((x) => <li key={x.id}><Link to={`/together/worries/${x.id}`}><span className="dot bg-green" /><span><b>{x.title}</b><small>#{x.tag}</small></span></Link></li>)}</ul></Panel>}
+      {r.worries.length > 0 && <Panel title="쫑알쫑알" code={`${r.worries.length}`}><ul className="olist">{r.worries.map((x) => <li key={x.id}><Link to={`/together/worries/${x.id}`}><span className="dot bg-green" /><span><b>{x.title}</b><small>#{x.tag}</small></span></Link></li>)}</ul></Panel>}
       {r.mentors.length > 0 && <Panel title="멘토" code={`${r.mentors.length}`}><ul className="olist">{r.mentors.map((x) => <li key={x.id}><Link to={`/together/mentors?m=${x.id}`}><span className="dot bg-purple" /><span><b>{x.name} 선생님 {x.verified && `· ${x.verified}`}</b><small>{x.fields.join(', ')}</small></span></Link></li>)}</ul></Panel>}
+      {r.instructors.length > 0 && <Panel title="강사 인력풀" code={`${r.instructors.length}`}><ul className="olist">{r.instructors.map((x) => { const m = MENTORS.find((y) => y.id === x.mentorId); return <li key={x.id}><Link to={`/together/instructors?i=${x.id}`}><span className="dot bg-ink" /><span><b>{m.name} 선생님 · {x.basis[0]}</b><small>{x.topics.map((t) => t.title).join(', ')}</small></span></Link></li>; })}</ul></Panel>}
       {r.outcomes.length > 0 && <Panel title="성과나눔" code={`${r.outcomes.length}`}><ul className="olist">{r.outcomes.map((x) => <li key={x.id}><Link to="/share/outcomes"><span className="dot bg-orange" /><span><b>{x.title}</b><small>{x.kind} · {x.school}</small></span></Link></li>)}</ul></Panel>}
       <OpenClassModal o={o} onClose={() => setO(null)} />
     </div>

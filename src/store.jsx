@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { CITIES } from './data/gyeonggiMap.js';
-import { AREAS, BANDS, DIAG_HISTORY, DIARY, GOALS, LEVELS, ME, MENTORINGS, POINT_LOG, SCALE, SUBJECT_ALIAS, TODAY, bandOf } from './data/seed.js';
+import { AREAS, BANDS, DIAG_HISTORY, DIARY, GOALS, INSTRUCTOR_TARGETS, INSTRUCTORS, INVITE_STEPS, INVITES, LEVELS, ME, MENTORINGS, POINT_LOG, SUBJECT_ALIAS, TODAY, bandOf } from './data/seed.js';
 import { DEFAULT_PROFILE, cleanProfile } from './fit.js';
 
 // 화면에서 한 모든 일은 이 브라우저(localStorage)에만 남는다.
@@ -33,14 +33,17 @@ const initial = () => ({
   pointLog: [],
   notifRead: false,
   profile: { ...DEFAULT_PROFILE },
-  classView: 'feed',
-  quickDiag: {},
+  openView: 'cal',
+  invites: [],
+  inviteStep: {},
+  inviteReview: {},
 });
 
 // 단계는 배움·나눔·동행 세 가지로 통일했다. 예전 기록의 실천·성찰은 가까운 단계로 옮긴다.
 const STAGE_FIX = { 실천: '배움', 성찰: '나눔' };
 const fixKind = (k) => STAGE_FIX[k] ?? (['배움', '나눔', '동행'].includes(k) ? k : '배움');
-export const CLASS_VIEWS = ['feed', 'week', 'map', 'cal'];
+// 공개수업 보기는 한 달 달력과 맞춤 피드 두 가지(예전 판의 주간·지도 보기 선택은 버리고 달력으로 연다)
+export const OPEN_VIEWS = ['cal', 'feed'];
 const SCOPES = ['학교', '지원청', '도'];
 const CITY_OK = new Set(CITIES.map((c) => c.name));
 const str = (v, n) => String(v ?? '').slice(0, n);
@@ -85,18 +88,18 @@ function load() {
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return base;
     // 모양이 다른 값(옛 버전·손상)은 버리고 기본값을 쓴다
     for (const [k, v] of Object.entries(parsed)) {
-      if (k === '__proto__' || k === 'constructor' || k === 'prototype' || k === 'homeVersion' || k === 'subjectAlerts') continue;
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype' || k === 'homeVersion' || k === 'subjectAlerts' || k === 'classView' || k === 'quickDiag') continue;
       const d = base[k];
       if (d === undefined) { if (v && typeof v === 'object' && !Array.isArray(v)) base[k] = v; else if (typeof v === 'string') base[k] = v; continue; }
       if (Array.isArray(d) ? Array.isArray(v) : (typeof v === typeof d && v !== null && !Array.isArray(v))) base[k] = v;
     }
     if (typeof base.points.activity !== 'number' || typeof base.points.interaction !== 'number') base.points = initial().points;
     base.profile = cleanProfile(base.profile);
-    if (!CLASS_VIEWS.includes(base.classView)) base.classView = 'feed';
+    if (!OPEN_VIEWS.includes(base.openView)) base.openView = 'cal';
     base.diary = base.diary.filter((d) => obj(d)).map((d) => ({ ...d, title: str(d.title, 80), body: str(d.body, 2000), date: isDate(d.date) ? d.date : TODAY, kind: fixKind(d.kind) }));
     base.goals = base.goals.filter((g) => g && typeof g === 'object' && Array.isArray(g.tasks))
       .map((g) => ({ ...g, id: str(g.id, 40), title: str(g.title, 120), area: areaKey(g.area), created: isDate(g.created) ? g.created : TODAY, tasks: g.tasks.filter((t) => t && typeof t === 'object').map((t) => ({ ...t, t: str(t.t, 120), kind: fixKind(t.kind) })) }));
-    base.diagnoses = base.diagnoses.filter((d) => obj(d) && isDate(d.date)).map((d) => ({ ...d, label: str(d.label, 40), scores: fixScores(d.scores) }));
+    base.diagnoses = base.diagnoses.filter((d) => obj(d) && isDate(d.date)).map((d) => ({ ...d, label: str(d.label, 40), scores: fixScores(d.scores), type: typeof d.type === 'string' && d.type ? str(d.type, 80) : undefined, worry: str(d.worry, 300) }));
     base.myClasses = base.myClasses.filter((o) => o && typeof o === 'object' && typeof o.id === 'string' && isDate(o.date) && typeof o.time === 'string').map(fixClass);
     // 첫 화면이 읽는 내 자료·모듈·고민도 모양을 맞춘다(손상된 저장값이 첫 화면을 멈추지 않게)
     base.myMaterials = base.myMaterials.filter((m) => obj(m) && typeof m.id === 'string')
@@ -107,7 +110,12 @@ function load() {
       .map((w) => ({ ...w, title: str(w.title, 80), body: str(w.body, 2000), author: str(w.author || ME.name, 30), tag: str(w.tag || '기타', 20), date: isDate(w.date) ? w.date : TODAY, likes: nonneg(w.likes), comments: Array.isArray(w.comments) ? w.comments.filter(obj) : [] }));
     base.worryComments = Object.fromEntries(Object.entries(base.worryComments).filter(([, v]) => Array.isArray(v))
       .map(([k, v]) => [k, v.filter(obj).map((c) => ({ ...c, author: str(c.author, 30), body: str(c.body, 1000), date: isDate(c.date) ? c.date : TODAY }))]));
-    base.quickDiag = Object.fromEntries(Object.entries(base.quickDiag).filter(([k, v]) => AREAS.some((a) => a.key === k) && Number.isInteger(v) && v >= 1 && v <= SCALE.length));
+    const LAST = INVITE_STEPS.length - 1;
+    const stepOk = (v) => Number.isInteger(v) && v >= 0 && v <= LAST;
+    base.invites = base.invites.filter((v) => obj(v) && typeof v.id === 'string' && INSTRUCTORS.some((x) => x.id === v.instructorId) && isDate(v.date))
+      .map((v) => ({ id: str(v.id, 40), instructorId: v.instructorId, topic: str(v.topic, 80), date: v.date, time: str(v.time, 20), format: v.format === '원격' ? '원격' : '대면', target: INSTRUCTOR_TARGETS.includes(v.target) ? v.target : INSTRUCTOR_TARGETS[0], count: Math.max(1, Math.min(300, Math.trunc(Number(v.count)) || 1)), memo: str(v.memo, 500), step: stepOk(v.step) ? v.step : 0, created: isDate(v.created) ? v.created : TODAY, next: str(v.next, 120), review: Number.isInteger(v.review) && v.review >= 1 && v.review <= 5 ? v.review : undefined }));
+    base.inviteStep = Object.fromEntries(Object.entries(base.inviteStep).filter(([, v]) => stepOk(v)));
+    base.inviteReview = Object.fromEntries(Object.entries(base.inviteReview).filter(([, v]) => Number.isInteger(v) && v >= 1 && v <= 5));
     return base;
   } catch {
     return initial();
@@ -165,6 +173,7 @@ export function StoreProvider({ children }) {
     get goalsAll() { return [...GOALS, ...s.goals]; },
     get diagAll() { return [...DIAG_HISTORY, ...s.diagnoses]; },
     get mentoringsAll() { return [...s.myMentorings, ...MENTORINGS]; },
+    get invitesAll() { return [...s.invites, ...INVITES]; },
   }), [s, toast, patch, award]);
 
   return (

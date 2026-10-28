@@ -1,7 +1,7 @@
 // 한 객체는 어느 화면에서든 같은 카드로 그린다(첫 화면·목록·검색 공용).
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BADGE_STAGES, COMM_TYPES, DELIVERY_INFO, LEVEL_COLOR, ME, TODAY, TRAINING_TYPE_INFO, badgeOf } from '../data/seed.js';
+import { BADGE_STAGES, COMM_TYPES, DELIVERY_INFO, LEVEL_COLOR, ME, TODAY, TRAINING_TYPE_INFO, badgeOf, instructorOf } from '../data/seed.js';
 import { SCOPE_LABEL, classAccess, shortOffice } from '../fit.js';
 import { matCat, thumbOf } from '../thumbs.js';
 import { useStore } from '../store.jsx';
@@ -200,8 +200,8 @@ export function ScopeChip({ scope }) {
   return <span className={`scope scope--${{ 도: 'do', 지원청: 'office', 학교: 'school' }[scope]}`}>{SCOPE_LABEL[scope]}</span>;
 }
 
-// 공개수업 한 건. 시안 네 개(피드·주간·지도·달력)가 모두 이 카드를 쓴다.
-export function OpenClassCard({ o, onOpen, showDist }) {
+// 공개수업 한 건. 한 달 달력과 맞춤 피드가 모두 이 카드를 쓴다.
+export function OpenClassCard({ o, onOpen }) {
   const { s } = useStore();
   const access = classAccess(o, s.profile);
   const applied = !!s.classApps[o.id];
@@ -217,7 +217,6 @@ export function OpenClassCard({ o, onOpen, showDist }) {
           <ScopeChip scope={o.scope} />
           <Chip tone={LEVEL_COLOR[o.level]}>{o.level}</Chip>
           {o.audience.length > 1 && <span className="mono">대상 {o.audience.join('·')}</span>}
-          {showDist != null && <span className="mono">{showDist ? `약 ${showDist}km` : '같은 시·군'}</span>}
         </div>
         <button className="ocls__title" onClick={() => onOpen(o)}><b>{o.subject}</b> {o.topic}</button>
         <span className="ocls__meta">{o.school} {o.grade} · {shortOffice(o.office)} · {o.teacher} 선생님</span>
@@ -293,7 +292,7 @@ export function WorryItem({ w, onOpenDetail }) {
       <div className="witem__body">
         <div className="witem__top">
           <Link to={`/together/worries/${w.id}`} className="witem__title" onClick={onOpenDetail}>{w.title}</Link>
-          <Chip tone={w.solved ? 'green' : 'orange'}>{w.solved ? '해결됨' : `답변 ${comments.length}`}</Chip>
+          <Chip tone={w.solved ? 'green' : 'orange'}>{w.solved ? '해결됨' : `댓글 ${comments.length}`}</Chip>
         </div>
         <p className="witem__text">{w.body}</p>
         <div className="witem__foot">
@@ -307,6 +306,7 @@ export function WorryItem({ w, onOpenDetail }) {
 }
 
 export function MentorCard({ m, onApply }) {
+  const pool = instructorOf(m.id);
   return (
     <article className={`mtcard ${m.verified ? 'mtcard--verified' : ''}`}>
       {m.verified && <div className="mtcard__ribbon"><Icon name="shield" size={14} /> 우수멘토 · {m.verified}</div>}
@@ -320,8 +320,32 @@ export function MentorCard({ m, onApply }) {
       <p>{m.intro}</p>
       <div className="chips">{m.fields.map((f) => <Chip key={f} tone="purple">{f}</Chip>)}{m.region.map((r) => <Chip key={r}>{r}</Chip>)}</div>
       <div className="mtcard__foot">
-        <span className="mono"><Icon name="star" size={13} /> {m.rating} · 멘토링 {m.sessions}회{m.verified ? ' · 강사 인력풀' : ''}</span>
+        <span className="mono"><Icon name="star" size={13} /> {m.rating} · 멘토링 {m.sessions}회{pool && <> · <Link to={`/together/instructors?i=${pool.id}`} className="mtcard__pool">강사 인력풀</Link></>}</span>
         <button className={`btn btn--sm ${m.verified ? 'btn--dark' : 'btn--line'}`} onClick={() => onApply(m)}>상세 · 신청</button>
+      </div>
+    </article>
+  );
+}
+
+// 강사 인력풀의 강사 한 명. 멘토와 같은 사람이라 이름·학교·분야는 멘토 정보를 그대로 쓰고, 강의 주제·학교 연수 이력을 더한다.
+export function InstructorCard({ i, m, onInvite }) {
+  return (
+    <article className="mtcard incard">
+      <div className="incard__basis">{i.basis.map((b) => <span key={b} className="mtcard__ribbon"><Icon name="shield" size={14} />{b}</span>)}</div>
+      <div className="mtcard__head">
+        <Avatar name={m.name} size={48} />
+        <div>
+          <strong>{m.name} 선생님</strong>
+          <span>{m.school} · {m.role} · 경력 {m.years}년</span>
+        </div>
+      </div>
+      <ul className="incard__topics">
+        {i.topics.map((t) => <li key={t.title}><Icon name="school" size={15} /><span><b>{t.title}</b><small className="mono">{t.mins}분 · {t.target}</small></span></li>)}
+      </ul>
+      <div className="chips">{m.fields.map((f) => <Chip key={f} tone="purple">{f}</Chip>)}{i.formats.map((f) => <Chip key={f}>{f}</Chip>)}{m.region.filter((r) => r !== '온라인 가능').map((r) => <Chip key={r}>{r}</Chip>)}</div>
+      <div className="mtcard__foot">
+        <span className="mono"><Icon name="star" size={13} /> {i.rating} · 학교 연수 {i.talks}회</span>
+        <button className="btn btn--sm btn--dark" onClick={() => onInvite(i)}>상세 · 초빙</button>
       </div>
     </article>
   );

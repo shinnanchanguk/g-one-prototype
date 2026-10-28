@@ -1,30 +1,27 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { CommunityCard, OpenClassCard, OpenClassModal, ScopeChip } from '../components/cards.jsx';
-import { GyeonggiMap, MonthCalendar } from '../components/charts.jsx';
+import { MonthCalendar } from '../components/charts.jsx';
 import Icon from '../components/Icon.jsx';
 import { Avatar, Chip, Empty, Field, Modal, PageHead, Panel, SearchBox, Select, Tabs, fmtDate, num, shortDate } from '../components/ui.jsx';
-import { BANDS, BOARD_TABS, COMM_POSTS, COMM_TYPES, COMMUNITIES, LEVELS, ME, OFFICES, OPEN_CLASSES, OUTCOMES, SUBJECTS, TODAY, officeOf } from '../data/seed.js';
-import { SCOPE_HELP, SCOPE_LABEL, classAccess, distKm, neighborOffices, shortOffice } from '../fit.js';
+import { BANDS, BOARD_TABS, COMM_POSTS, COMM_TYPES, COMMUNITIES, ME, OFFICES, OPEN_CLASSES, OUTCOMES, SUBJECTS, TODAY } from '../data/seed.js';
+import { SCOPE_HELP, SCOPE_LABEL, classAccess, neighborOffices, shortOffice } from '../fit.js';
 import { uid, useStore } from '../store.jsx';
 
+// 보기 두 가지. TF 의견대로 한 달 달력과 맞춤 피드를 고르게 하고, 처음에는 더 직관적인 한 달 달력을 연다.
 const VIEWS = [
-  { v: 'feed', n: 1, label: '맞춤 피드', icon: 'list', solves: '정보가 너무 많고 범위가 헷갈리는 문제', note: '우리 학교 동료장학, 우리 지원청, 같은 교과, 도 단위 순으로 묶어 내게 맞는 것부터 보여 줘요.' },
-  { v: 'week', n: 2, label: '주간 일정표', icon: 'clock', solves: '달력 칸에 정보가 다 안 들어가는 문제', note: '이번 주와 다음 주를 요일과 오전·오후로 나눠 보여 줘요. 내 수업·신청과 겹치는지 바로 보여요.' },
-  { v: 'map', n: 3, label: '지도·가까운 순', icon: 'map', solves: '내 지역과 이웃 지역을 골라 보기 어려운 문제', note: '지도에서 시·군을 눌러 지역을 넣고 빼요. 목록은 우리 학교에서 가까운 순이에요.' },
-  { v: 'cal', n: 4, label: '한 달 달력', icon: 'calendar', solves: '기존 달력이 복잡한 문제', note: '기존 달력을 고친 안이에요. 날짜를 누르면 그날 수업이 옆에 펼쳐져요.' },
+  { v: 'cal', label: '한 달 달력', icon: 'calendar', note: '날짜를 누르면 그날 공개수업이 옆에 펼쳐져요.' },
+  { v: 'feed', label: '맞춤 피드', icon: 'list', note: '우리 학교 동료장학, 우리 지원청, 같은 교과, 도 단위 순으로 묶어 내게 맞는 것부터 보여 줘요.' },
 ];
 const BAND_OPTS = ['전체 학교급', ...BANDS];
-const WEEK0 = '2026-10-26';
-const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
 
-function Group({ title, sub, items, onOpen, max = 4, dist }) {
+function Group({ title, sub, items, onOpen, max = 4 }) {
   const [all, setAll] = useState(false);
   if (!items.length) return null;
   return (
     <section className="ogroup">
       <h3 className="ogroup__title">{title}<span className="mono">{items.length}</span>{sub && <small>{sub}</small>}</h3>
-      <div className="oclist">{(all ? items : items.slice(0, max)).map((o) => <OpenClassCard key={o.id} o={o} onOpen={onOpen} showDist={dist?.(o)} />)}</div>
+      <div className="oclist">{(all ? items : items.slice(0, max)).map((o) => <OpenClassCard key={o.id} o={o} onOpen={onOpen} />)}</div>
       {items.length > max && <button className="more" onClick={() => setAll(!all)}>{all ? '접기' : `${items.length - max}건 더 보기`}</button>}
     </section>
   );
@@ -56,76 +53,6 @@ function FeedView({ list, nearExtra, p, band, wide, onOpen }) {
   );
 }
 
-function WeekView({ list, onOpen }) {
-  const st = useStore();
-  const [w, setW] = useState(0);
-  const start = addDays(WEEK0, w * 7);
-  const days = [0, 1, 2, 3, 4].map((i) => addDays(start, i));
-  const my = st.s.myClasses.concat(OPEN_CLASSES.filter((o) => o.teacher === ME.name));
-  const slot = (o) => (Number(o.time.slice(0, 2)) < 12 ? '오전' : '오후');
-  const label = w === 0 ? '이번 주' : w === 1 ? '다음 주' : w === -1 ? '지난주' : `${w}주 뒤`;
-  return (
-    <Panel>
-      <div className="cal__bar">
-        <button className="iconbtn" onClick={() => setW(w - 1)} aria-label="이전 주"><Icon name="left" /></button>
-        <strong>{label} <span className="mono">{shortDate(days[0])} ~ {shortDate(days[4])}</span></strong>
-        <button className="iconbtn" onClick={() => setW(w + 1)} aria-label="다음 주"><Icon name="right" /></button>
-      </div>
-      <div className="week">
-        <div className="week__corner" />
-        {days.map((d) => <div key={d} className={`week__day ${d === TODAY ? 'is-today' : ''}`}><b>{'일월화수목금토'[new Date(d).getDay()]}</b><span className="mono">{shortDate(d)}</span></div>)}
-        {['오전', '오후'].map((sl) => (
-          <Fragment key={sl}>
-            <div className="week__slot">{sl}</div>
-            {days.map((d) => {
-              const here = list.filter((o) => o.date === d && slot(o) === sl);
-              const mine = my.filter((o) => o.date === d && slot(o) === sl);
-              return (
-                <div key={d + sl} className="week__cell">
-                  {mine.map((o) => <span key={o.id} className="wk wk--mine"><b>내 수업</b>{o.time} {o.subject}</span>)}
-                  {here.filter((o) => !mine.some((x) => x.id === o.id)).map((o) => (
-                    <button key={o.id} className={`wk ${st.s.classApps[o.id] ? 'is-applied' : ''} ${o.locked ? 'is-locked' : ''}`} onClick={() => onOpen(o)}>
-                      <span className="wk__top"><ScopeChip scope={o.scope} /><span className="mono">{o.time}</span></span>
-                      <b>{o.subject} · {o.topic}</b>
-                      <small>{o.school} · {shortOffice(o.office)}</small>
-                    </button>
-                  ))}
-                </div>
-              );
-            })}
-          </Fragment>
-        ))}
-      </div>
-      <ul className="legend"><li><span className="wk wk--mine wk--dot" />내가 여는 수업</li><li><span className="wk is-applied wk--dot" />참관 신청함</li><li><ScopeChip scope="학교" />우리 학교만</li><li><ScopeChip scope="지원청" />지원청 단위</li><li><ScopeChip scope="도" />도 단위</li></ul>
-    </Panel>
-  );
-}
-
-function MapView({ list, p, regions, setRegions, onOpen }) {
-  const [sel, setSel] = useState(null);
-  const offices = regions === 'all' ? null : regions;
-  const regionCities = new Set((offices ?? [p.office, ...neighborOffices(p.office)]).flatMap((n) => OFFICES.find((o) => o.name === n).cities));
-  const pick = (city) => {
-    const off = officeOf(city);
-    const cur = regions === 'all' ? [] : regions;
-    const next = cur.includes(off) ? cur.filter((x) => x !== off) : [...cur, off];
-    setRegions(next.length ? next : 'all');
-  };
-  const sorted = [...list].sort((a, b) => distKm(p.city, a.city) - distKm(p.city, b.city) || a.date.localeCompare(b.date));
-  return (
-    <div className="mapwrap">
-      <Panel className="mapwrap__map">
-        <p className="note"><Icon name="pin" size={15} />{regions === 'all' ? '진하게 칠한 곳이 우리 지원청과 이웃 지원청이에요. 시·군을 누르면 그 지역만 골라 볼 수 있어요.' : '고른 지역만 보여요. 다시 누르면 빠져요.'}</p>
-        <GyeonggiMap items={list} selected={sel} onSelect={setSel} onOpen={onOpen} regionCities={regionCities} homeCity={p.city} focusCity={p.city} onCity={pick} />
-      </Panel>
-      <Panel className="mapwrap__list" title="우리 학교에서 가까운 순" code={`${sorted.length}건 · 시·군 중심 거리`}>
-        <div className="oclist">{sorted.map((o) => <OpenClassCard key={o.id} o={o} onOpen={onOpen} showDist={distKm(p.city, o.city)} />)}</div>
-        {!sorted.length && <Empty text="고른 지역에 공개수업이 없어요" />}
-      </Panel>
-    </div>
-  );
-}
-
 function CalView({ list, onOpen }) {
   // 오늘 이후 첫 공개수업이 있는 날로 연다
   const first = [...list].filter((o) => o.date >= TODAY).sort((a, b) => a.date.localeCompare(b.date))[0]?.date ?? TODAY;
@@ -152,8 +79,8 @@ export function OpenClasses() {
   const st = useStore();
   const p = st.s.profile;
   const [sp, setSp] = useSearchParams();
-  const view = [sp.get('v'), st.s.classView].find((x) => VIEWS.some((y) => y.v === x)) ?? 'feed';
-  const setView = (v) => { st.patch(() => ({ classView: v })); setSp({ v }, { replace: true }); };
+  const view = [sp.get('v'), st.s.openView].find((x) => VIEWS.some((y) => y.v === x)) ?? 'cal';
+  const setView = (v) => { st.patch(() => ({ openView: v })); setSp({ v }, { replace: true }); };
   const [tab, setTab] = useState('explore');
   const [scope, setScope] = useState('전체');
   const [regions, setRegions] = useState('all');
@@ -212,7 +139,7 @@ export function OpenClasses() {
     };
     st.patch((s) => ({ myClasses: [o, ...s.myClasses] }));
     st.award('활동', 50, `수업 공개 등록: ${o.topic}`);
-    st.toast(`${SCOPE_LABEL[f.scope]} 공개수업을 등록했어요 · ${f.scope === '학교' ? '우리 학교 선생님에게만 보여요' : '모든 시안에 바로 보여요'}`);
+    st.toast(`${SCOPE_LABEL[f.scope]} 공개수업을 등록했어요 · ${f.scope === '학교' ? '우리 학교 선생님에게만 보여요' : '달력과 맞춤 피드에 바로 보여요'}`);
     setTab('explore'); setScope('전체');
   };
 
@@ -223,16 +150,15 @@ export function OpenClasses() {
 
       {tab === 'explore' && (
         <>
-          <div className="variantbar variantbar--wrap">
-            <span className="variantbar__k"><Icon name="layers" size={15} />화면 시안</span>
-            <div className="vpick" role="tablist" aria-label="공개수업 화면 시안">
+          <div className="viewbar">
+            <div className="vpick" role="tablist" aria-label="공개수업 보기">
               {VIEWS.map((x) => (
                 <button key={x.v} role="tab" aria-selected={view === x.v} className={view === x.v ? 'is-on' : ''} onClick={() => setView(x.v)}>
-                  <span className="vpick__n">{x.n}</span><Icon name={x.icon} size={15} />{x.label}
+                  <Icon name={x.icon} size={15} />{x.label}
                 </button>
               ))}
             </div>
-            <p className="variantbar__note"><b>푸는 문제 · {cur.solves}</b> {cur.note}</p>
+            <p className="viewbar__note">{cur.note}</p>
           </div>
 
           <div className="ofilter">
@@ -266,8 +192,6 @@ export function OpenClasses() {
           )}
 
           {view === 'feed' && <FeedView list={upcoming} nearExtra={regions === 'all' && !wide ? nearExtra : []} p={p} band={band} wide={wide} onOpen={setOpen} />}
-          {view === 'week' && <WeekView list={filtered} onOpen={setOpen} />}
-          {view === 'map' && <MapView list={upcoming} p={p} regions={regions} setRegions={setRegions} onOpen={setOpen} />}
           {view === 'cal' && <CalView list={filtered} onOpen={setOpen} />}
         </>
       )}
