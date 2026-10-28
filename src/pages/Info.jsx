@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CommunityCard, MaterialCard, ModuleCard, OpenClassCard, OpenClassModal, TrainingCard } from '../components/cards.jsx';
 import Icon from '../components/Icon.jsx';
@@ -105,7 +105,13 @@ export function Faq() {
 export function Search() {
   const st = useStore();
   const [sp, setSp] = useSearchParams();
-  const q = sp.get('q') ?? '';
+  const urlQ = sp.get('q') ?? '';
+  // 입력은 화면 상태로 바로 받고 주소는 뒤따라 고친다. 주소에 바로 묶으면 빠르게 칠 때 글자가 빠졌다.
+  const [q, setText] = useState(urlQ);
+  const box = useRef(null);
+  // 머리말 검색처럼 바깥에서 주소가 바뀌면 따라간다(이 칸에서 치는 중에는 덮어쓰지 않는다)
+  useEffect(() => { if (!box.current?.contains(document.activeElement)) setText(urlQ); }, [urlQ]);
+  const type = (v) => { setText(v); setSp(v ? { q: v } : {}, { replace: true }); };
   const [o, setO] = useState(null);
   const has = (s) => q && s.includes(q);
   const r = {
@@ -128,8 +134,8 @@ export function Search() {
   return (
     <div className="container">
       <PageHead title="통합 검색" desc="연수, 배움 모듈, 교육자료, 공동체, 공개수업, 쫑알쫑알 글, 멘토, 강사, 성과를 한 번에 찾아요." />
-      <SearchBox value={q} onChange={(v) => setSp(v ? { q: v } : {})} placeholder="예) AI, 질문, 루브릭, 마음" />
-      {!q && <div className="chips mt">{['AI', '질문', '평가', '마음', '수학', '생활교육'].map((k) => <button key={k} className="chip chip--btn" onClick={() => setSp({ q: k })}>#{k}</button>)}</div>}
+      <div ref={box}><SearchBox value={q} onChange={type} placeholder="예) AI, 질문, 루브릭, 마음" /></div>
+      {!q && <div className="chips mt">{['AI', '질문', '평가', '마음', '수학', '생활교육'].map((k) => <button key={k} className="chip chip--btn" onClick={() => type(k)}>#{k}</button>)}</div>}
       {q && <p className="mono mt">「{q}」 검색 결과 {total}건</p>}
       {q && !total && <Empty text="검색 결과가 없어요" />}
       {menus.length > 0 && <Panel title="메뉴 바로 가기" code={`${menus.length}`}><ul className="olist">{menus.map((x) => <li key={x.to}><Link to={x.to}><span className="dot bg-ink" /><span><b>{x.group} · {x.label}</b><small>{x.desc}</small></span></Link></li>)}</ul></Panel>}
