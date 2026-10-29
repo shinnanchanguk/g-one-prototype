@@ -39,11 +39,16 @@ export const MENU = [
 
 // 머리말 펼침 상자(알림·내 메뉴). 머리말의 흐림 효과(backdrop-filter) 안에서는 fixed 도 머리말에 갇히므로 body 로 옮겨 띄운다.
 // 단추 오른쪽 끝에 맞추되 화면 양옆 12px 안으로 당기고, 세로가 모자라면 상자 안에서 넘긴다.
-function HeaderDrop({ anchor, open, onClose, className = '', label, children }) {
+// body 끝으로 옮긴 만큼 키보드 순서를 직접 잇는다: 키보드로 열면 첫 항목으로, 끝에서 Tab 은 다음 단추로, 첫 항목에서 Shift+Tab 은 여는 단추로.
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+function HeaderDrop({ anchor, open, onClose, kbd, className = '', label, children }) {
   const box = useRef(null);
   const close = useRef(onClose);
   close.current = onClose;
   const [pos, setPos] = useState(null);
+  const loc = useLocation();
+  const opener = () => anchor.current?.querySelector('button');
+  const shut = useCallback((focusBack) => { close.current(); if (focusBack) opener()?.focus(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const place = useCallback(() => {
     const a = anchor.current?.getBoundingClientRect();
     const m = box.current;
@@ -53,17 +58,26 @@ function HeaderDrop({ anchor, open, onClose, className = '', label, children }) 
     const top = a.bottom + gap;
     setPos({ left, top, maxHeight: Math.max(120, H - top - edge) });
   }, [anchor]);
+  // 다른 화면으로 가면 닫는다(서랍 메뉴·뒤로 가기 포함)
+  useEffect(() => { close.current(); }, [loc.pathname]);
   useLayoutEffect(() => {
     if (!open) { setPos(null); return undefined; }
     place();
-    const raf = requestAnimationFrame(place);
-    const onDown = (e) => { if (!anchor.current?.contains(e.target) && !box.current?.contains(e.target)) close.current(); };
-    const onKey = (e) => { if (e.key === 'Escape') close.current(); };
+    const raf = requestAnimationFrame(() => { place(); if (kbd) box.current?.querySelector(FOCUSABLE)?.focus(); });
+    const inside = (el) => !!el && (anchor.current?.contains(el) || box.current?.contains(el));
+    const onDown = (e) => { if (!inside(e.target)) close.current(); };
+    const onKey = (e) => { if (e.key === 'Escape') shut(box.current?.contains(document.activeElement)); };
+    // 키보드로 단추·상자 밖 다른 곳에 가면 닫는다(빈 곳을 눌러 포커스가 사라지는 경우는 그대로 둔다)
+    const onFocusOut = (e) => { if (e.relatedTarget && !inside(e.relatedTarget)) close.current(); };
+    const a = anchor.current;
+    const m = box.current;
     window.addEventListener('resize', place);
     window.addEventListener('scroll', place, true);
     document.addEventListener('mousedown', onDown);
     document.addEventListener('touchstart', onDown, { passive: true });
     window.addEventListener('keydown', onKey);
+    a?.addEventListener('focusout', onFocusOut);
+    m?.addEventListener('focusout', onFocusOut);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', place);
@@ -71,11 +85,28 @@ function HeaderDrop({ anchor, open, onClose, className = '', label, children }) 
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('touchstart', onDown);
       window.removeEventListener('keydown', onKey);
+      a?.removeEventListener('focusout', onFocusOut);
+      m?.removeEventListener('focusout', onFocusOut);
     };
-  }, [open, place, anchor]);
+  }, [open, place, anchor, kbd, shut]);
+  // 사파리는 기본 설정에서 Tab 이 단추·링크를 건너뛰므로 상자 안 이동도 직접 한다
+  const onTab = (e) => {
+    if (e.key !== 'Tab') return;
+    const items = [...box.current.querySelectorAll(FOCUSABLE)];
+    if (!items.length) return;
+    e.preventDefault();
+    const i = items.indexOf(document.activeElement);
+    if (e.shiftKey) { if (i <= 0) shut(true); else items[i - 1].focus(); return; }
+    if (i >= 0 && i < items.length - 1) { items[i + 1].focus(); return; }
+    const btn = opener();
+    const order = [...document.querySelectorAll(FOCUSABLE)].filter((el) => !box.current.contains(el) && el.getClientRects().length);
+    const next = order[order.indexOf(btn) + 1];
+    close.current();
+    (next ?? btn)?.focus();
+  };
   if (!open) return null;
   return createPortal(
-    <div ref={box} role="dialog" aria-label={label} className={`drop drop--float ${className}`} style={pos ? { left: pos.left, top: pos.top, maxHeight: pos.maxHeight } : { left: 0, top: 0, visibility: 'hidden' }}>
+    <div ref={box} role="dialog" aria-label={label} onKeyDown={onTab} className={`drop drop--float ${className}`} style={pos ? { left: pos.left, top: pos.top, maxHeight: pos.maxHeight } : { left: 0, top: 0, visibility: 'hidden' }}>
       {children}
     </div>,
     document.body,
@@ -88,13 +119,14 @@ function Bell() {
   const ref = useRef(null);
   const nav = useNavigate();
   const shut = useCallback(() => setOpen(false), []);
+  const [kbd, setKbd] = useState(false);
   return (
     <div className="hdr__pop" ref={ref}>
-      <button className="iconbtn hdr__bell" aria-label="알림" aria-expanded={open} onClick={() => { setOpen(!open); patch(() => ({ notifRead: true })); }}>
+      <button className="iconbtn hdr__bell" aria-label="알림" aria-expanded={open} onClick={(e) => { setKbd(e.detail === 0); setOpen(!open); patch(() => ({ notifRead: true })); }}>
         <Icon name="bell" size={21} />
         {!s.notifRead && <span className="hdr__badge">{NOTIFS.length}</span>}
       </button>
-      <HeaderDrop anchor={ref} open={open} onClose={shut} label="알림">
+      <HeaderDrop anchor={ref} open={open} onClose={shut} kbd={kbd} label="알림">
         <p className="mono drop__title">알림</p>
         {NOTIFS.map((n) => (
           <button key={n.id} className="drop__item" onClick={() => { setOpen(false); nav(n.to); }}>
@@ -111,14 +143,15 @@ function UserMenu({ onProfile }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const shut = useCallback(() => setOpen(false), []);
+  const [kbd, setKbd] = useState(false);
   return (
     <div className="hdr__pop" ref={ref}>
-      <button className="hdr__me" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button className="hdr__me" onClick={(e) => { setKbd(e.detail === 0); setOpen(!open); }} aria-expanded={open}>
         <Avatar name={ME.name} size={32} />
         <span className="hdr__me-name">{ME.name} 선생님</span>
         <Icon name="down" size={14} />
       </button>
-      <HeaderDrop anchor={ref} open={open} onClose={shut} className="drop--me" label="내 메뉴">
+      <HeaderDrop anchor={ref} open={open} onClose={shut} kbd={kbd} className="drop--me" label="내 메뉴">
         <div className="drop__me">
           <strong>{ME.name} 선생님</strong>
           <span>{ME.school} · {ME.role}</span>
