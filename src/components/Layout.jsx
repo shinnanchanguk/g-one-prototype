@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ME, NOTIFS } from '../data/seed.js';
 import { profileLabel } from '../fit.js';
@@ -36,13 +37,49 @@ export const MENU = [
   ] },
 ];
 
-function useOutside(ref, on, off) {
-  useEffect(() => {
-    if (!on) return;
-    const h = (e) => ref.current && !ref.current.contains(e.target) && off();
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, [ref, on, off]);
+// 머리말 펼침 상자(알림·내 메뉴). 머리말의 흐림 효과(backdrop-filter) 안에서는 fixed 도 머리말에 갇히므로 body 로 옮겨 띄운다.
+// 단추 오른쪽 끝에 맞추되 화면 양옆 12px 안으로 당기고, 세로가 모자라면 상자 안에서 넘긴다.
+function HeaderDrop({ anchor, open, onClose, className = '', label, children }) {
+  const box = useRef(null);
+  const close = useRef(onClose);
+  close.current = onClose;
+  const [pos, setPos] = useState(null);
+  const place = useCallback(() => {
+    const a = anchor.current?.getBoundingClientRect();
+    const m = box.current;
+    if (!a || !m) return;
+    const W = document.documentElement.clientWidth, H = window.innerHeight, edge = 12, gap = 8;
+    const left = Math.max(edge, Math.min(a.right - m.offsetWidth, W - m.offsetWidth - edge));
+    const top = a.bottom + gap;
+    setPos({ left, top, maxHeight: Math.max(120, H - top - edge) });
+  }, [anchor]);
+  useLayoutEffect(() => {
+    if (!open) { setPos(null); return undefined; }
+    place();
+    const raf = requestAnimationFrame(place);
+    const onDown = (e) => { if (!anchor.current?.contains(e.target) && !box.current?.contains(e.target)) close.current(); };
+    const onKey = (e) => { if (e.key === 'Escape') close.current(); };
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown, { passive: true });
+    window.addEventListener('keydown', onKey);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open, place, anchor]);
+  if (!open) return null;
+  return createPortal(
+    <div ref={box} role="dialog" aria-label={label} className={`drop drop--float ${className}`} style={pos ? { left: pos.left, top: pos.top, maxHeight: pos.maxHeight } : { left: 0, top: 0, visibility: 'hidden' }}>
+      {children}
+    </div>,
+    document.body,
+  );
 }
 
 function Bell() {
@@ -50,23 +87,21 @@ function Bell() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const nav = useNavigate();
-  useOutside(ref, open, () => setOpen(false));
+  const shut = useCallback(() => setOpen(false), []);
   return (
     <div className="hdr__pop" ref={ref}>
       <button className="iconbtn hdr__bell" aria-label="알림" aria-expanded={open} onClick={() => { setOpen(!open); patch(() => ({ notifRead: true })); }}>
         <Icon name="bell" size={21} />
         {!s.notifRead && <span className="hdr__badge">{NOTIFS.length}</span>}
       </button>
-      {open && (
-        <div className="drop drop--right">
-          <p className="mono drop__title">알림</p>
-          {NOTIFS.map((n) => (
-            <button key={n.id} className="drop__item" onClick={() => { setOpen(false); nav(n.to); }}>
-              <span>{n.text}</span><small className="mono">{n.date}</small>
-            </button>
-          ))}
-        </div>
-      )}
+      <HeaderDrop anchor={ref} open={open} onClose={shut} label="알림">
+        <p className="mono drop__title">알림</p>
+        {NOTIFS.map((n) => (
+          <button key={n.id} className="drop__item" onClick={() => { setOpen(false); nav(n.to); }}>
+            <span>{n.text}</span><small className="mono">{n.date}</small>
+          </button>
+        ))}
+      </HeaderDrop>
     </div>
   );
 }
@@ -75,7 +110,7 @@ function UserMenu({ onProfile }) {
   const st = useStore();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  useOutside(ref, open, () => setOpen(false));
+  const shut = useCallback(() => setOpen(false), []);
   return (
     <div className="hdr__pop" ref={ref}>
       <button className="hdr__me" onClick={() => setOpen(!open)} aria-expanded={open}>
@@ -83,19 +118,17 @@ function UserMenu({ onProfile }) {
         <span className="hdr__me-name">{ME.name} 선생님</span>
         <Icon name="down" size={14} />
       </button>
-      {open && (
-        <div className="drop drop--right drop--me">
-          <div className="drop__me">
-            <strong>{ME.name} 선생님</strong>
-            <span>{ME.school} · {ME.role}</span>
-            <span className="mono">{num(st.totalPoints)}P</span>
-          </div>
-          <button className="drop__item" onClick={() => { setOpen(false); onProfile(); }}>내 정보 바꾸기 <small>{profileLabel(st.s.profile, st.s.profile.office)}</small></button>
-          <Link className="drop__item" to="/growth/journey" onClick={() => setOpen(false)}>나의 성장 여정</Link>
-          <Link className="drop__item" to="/together/mentoring" onClick={() => setOpen(false)}>나의 멘토링</Link>
-          <button className="drop__item" onClick={() => { setOpen(false); st.reset(); }}>체험 기록 처음으로 되돌리기</button>
+      <HeaderDrop anchor={ref} open={open} onClose={shut} className="drop--me" label="내 메뉴">
+        <div className="drop__me">
+          <strong>{ME.name} 선생님</strong>
+          <span>{ME.school} · {ME.role}</span>
+          <span className="mono">{num(st.totalPoints)}P</span>
         </div>
-      )}
+        <button className="drop__item" onClick={() => { setOpen(false); onProfile(); }}>내 정보 바꾸기 <small>{profileLabel(st.s.profile, st.s.profile.office)}</small></button>
+        <Link className="drop__item" to="/growth/journey" onClick={() => setOpen(false)}>나의 성장 여정</Link>
+        <Link className="drop__item" to="/together/mentoring" onClick={() => setOpen(false)}>나의 멘토링</Link>
+        <button className="drop__item" onClick={() => { setOpen(false); st.reset(); }}>체험 기록 처음으로 되돌리기</button>
+      </HeaderDrop>
     </div>
   );
 }

@@ -113,7 +113,6 @@ i { display: inline-block; width: 1px; height: 0.8em; background: var(--line); m
 .hdr__me-name { font-weight: 600; font-size: 14px; white-space: nowrap; }
 .hdr__tools .hdr__burger { display: none; }
 .drop { position: absolute; top: calc(100% + 8px); min-width: 300px; max-width: min(360px, calc(100vw - 24px)); background: var(--card); border: 1px solid var(--ink); border-radius: 18px; padding: 8px; box-shadow: var(--shadow); z-index: 70; }
-.drop--right { right: 0; }
 .drop__title { padding: 6px 10px; }
 .drop__item { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 12px; font-size: 14px; }
 .drop__item:hover { background: var(--bg-2); }
@@ -1053,3 +1052,6 @@ img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
 @media (max-width: 900px) { .home__hero { grid-template-columns: minmax(0, 1fr); } }
 /* 아이폰은 16px 보다 작은 입력칸을 누르면 화면을 확대해 옆으로 밀린다. 검색칸은 16px 로 */
 @media (max-width: 560px) { .home__search input, .searchbox input { font-size: 16px; } }
+
+/* 머리말 펼침 상자(알림·내 메뉴): body 로 옮겨 fixed 로 띄운다. 위치는 단추에 맞춰 스크립트가 화면 안으로 당긴다 */
+.drop--float { position: fixed; top: auto; right: auto; z-index: 160; min-width: min(300px, calc(100vw - 24px)); max-width: min(360px, calc(100vw - 24px)); overflow-y: auto; overscroll-behavior: contain; }
