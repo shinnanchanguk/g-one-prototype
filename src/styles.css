@@ -1059,7 +1059,15 @@ img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
 
 /* 공개수업 달력: 날짜 숫자가 아니라 그날 칸 어디를 눌러도 그날을 고른다 */
 .cal__cell--pick { cursor: pointer; transition: background 0.12s; }
-.cal__cell--pick:hover { background: #faf7f0; }
-.cal__cell--pick .cal__day--btn:hover { background: transparent; }
+/* 손가락으로 누른 칸에 호버 색이 남지 않게, 마우스가 있는 기기에서만 */
+@media (hover: hover) {
+  .cal__cell--pick:hover { background: #faf7f0; }
+  .cal__cell--pick .cal__day--btn:hover { background: transparent; }
+}
+.cal__more { white-space: nowrap; }
+/* 좁은 아이폰(칸 안쪽 약 28px)에서는 숫자와 개수 배지가 한 줄에 안 들어가 옆 칸으로 넘쳤다. 배지를 숫자 아래로 내린다 */
+@media (max-width: 420px) {
+  .cal__cell--pick .cal__day--btn { flex-wrap: wrap; row-gap: 2px; column-gap: 2px; padding: 0 2px; max-width: 100%; }
+}
 /* 좁은 화면에서는 칩이 작아서 칸 누르기를 가로채지 않게 한다(그날 목록에서 상세를 연다) */
 @media (max-width: 900px) { .cal__cell--pick .cal__ev, .cal__cell--pick .cal__more { pointer-events: none; } }

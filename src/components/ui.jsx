@@ -91,10 +91,16 @@ export function Modal({ open, onClose, title, children, wide, footer }) {
     if (!open) return;
     const onKey = (e) => e.key === 'Escape' && close.current();
     const prev = document.body.style.overflow;
+    // 닫으면 창을 연 단추로 포커스를 돌려준다(키보드 사용자가 자리를 잃지 않게)
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', onKey);
     box.current?.focus();
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
   }, [open]);
   if (!open) return null;
   return createPortal(
