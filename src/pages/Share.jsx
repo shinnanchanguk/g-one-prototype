@@ -59,7 +59,7 @@ function CalView({ list, onOpen }) {
   const [ym, setYm] = useState([Number(first.slice(0, 4)), Number(first.slice(5, 7))]);
   const [day, setDay] = useState(first);
   // 좁은 화면에서는 목록이 달력 아래에 쌓이므로 날짜를 고르면 그 목록으로 내려간다
-  const pick = (d) => { setDay(d); if (window.matchMedia('(max-width: 1180px)').matches) requestAnimationFrame(() => document.querySelector('.calwrap__side')?.scrollIntoView({ behavior: 'smooth', block: 'start' })); };
+  const pick = (d, o = {}) => { setDay(d); if (o.scroll !== false && window.matchMedia('(max-width: 1180px)').matches) requestAnimationFrame(() => document.querySelector('.calwrap__side')?.scrollIntoView({ behavior: 'smooth', block: 'start' })); };
   const move = (d) => setYm(([y, m]) => { const n = m + d; return n < 1 ? [y - 1, 12] : n > 12 ? [y + 1, 1] : [y, n]; });
   const dayList = list.filter((o) => o.date === day);
   return (

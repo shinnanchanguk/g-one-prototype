@@ -1056,3 +1056,10 @@ img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
 /* 머리말 펼침 상자(알림·내 메뉴): body 로 옮겨 fixed 로 띄운다. 위치는 단추에 맞춰 스크립트가 화면 안으로 당긴다 */
 /* 폭은 예전처럼 300px. 서랍(150)·창(200)보다 아래, 머리말(50)보다 위 */
 .drop--float { position: fixed; top: auto; right: auto; z-index: 140; width: min(300px, calc(100vw - 24px)); min-width: 0; max-width: none; overflow-y: auto; overscroll-behavior: contain; }
+
+/* 공개수업 달력: 날짜 숫자가 아니라 그날 칸 어디를 눌러도 그날을 고른다 */
+.cal__cell--pick { cursor: pointer; transition: background 0.12s; }
+.cal__cell--pick:hover { background: #faf7f0; }
+.cal__cell--pick .cal__day--btn:hover { background: transparent; }
+/* 좁은 화면에서는 칩이 작아서 칸 누르기를 가로채지 않게 한다(그날 목록에서 상세를 연다) */
+@media (max-width: 900px) { .cal__cell--pick .cal__ev, .cal__cell--pick .cal__more { pointer-events: none; } }

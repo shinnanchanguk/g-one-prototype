@@ -38,7 +38,8 @@ export function Radar({ areas, series, size = 340 }) {
 export const radarColor = (i, total) => SERIES_COLORS[(SERIES_COLORS.length - total + i) % SERIES_COLORS.length];
 
 // ── 월간 달력 ─────────────────────────────────────────
-// 칸에는 두 건까지만 보이고 나머지는 +n. 날짜를 누르면 onPick 으로 그날을 고른다.
+// 칸에는 두 건까지만 보이고 나머지는 +n. 날짜 숫자가 아니라 그날 칸 어디를 눌러도 onPick 으로 그날을 고른다.
+// 공개수업 칩은 넓은 화면에서 상세 창도 바로 연다(좁은 화면에서는 칩이 작아 칸 누르기로만 쓴다).
 export function MonthCalendar({ year, month, items, onOpen, onMove, selected, onPick, max = 2 }) {
   const first = new Date(year, month - 1, 1).getDay();
   const days = new Date(year, month, 0).getDate();
@@ -58,16 +59,16 @@ export function MonthCalendar({ year, month, items, onOpen, onMove, selected, on
           const list = d ? items.filter((it) => it.date === key(d)) : [];
           const k = d ? key(d) : '';
           return (
-            <div key={i} className={`cal__cell ${d ? '' : 'is-blank'} ${d && k === '2026-10-26' ? 'is-today' : ''} ${d && k === selected ? 'is-sel' : ''}`}>
+            <div key={i} className={`cal__cell ${d ? '' : 'is-blank'} ${d && onPick ? 'cal__cell--pick' : ''} ${d && k === '2026-10-26' ? 'is-today' : ''} ${d && k === selected ? 'is-sel' : ''}`} onClick={d && onPick ? () => onPick(k) : undefined}>
               {d && (onPick
-                ? <button className="cal__day cal__day--btn" onClick={() => onPick(k)} aria-label={`${month}월 ${d}일 공개수업 ${list.length}건 보기`}>{d}{list.length > 0 && <span className="cal__n">{list.length}</span>}</button>
+                ? <button className="cal__day cal__day--btn" aria-pressed={k === selected} aria-label={`${month}월 ${d}일 공개수업 ${list.length}건 보기`}>{d}{list.length > 0 && <span className="cal__n">{list.length}</span>}</button>
                 : <span className="cal__day">{d}</span>)}
               {list.slice(0, max).map((it) => (
-                <button key={it.id} className={`cal__ev ev--${{ 도: 'do', 지원청: 'office', 학교: 'school' }[it.scope]} ${it.locked ? 'is-locked' : ''}`} onClick={() => onOpen(it)} title={`${it.school} ${it.topic}`}>
+                <button key={it.id} className={`cal__ev ev--${{ 도: 'do', 지원청: 'office', 학교: 'school' }[it.scope]} ${it.locked ? 'is-locked' : ''}`} onClick={(e) => { if (onPick) { e.stopPropagation(); onPick(k, { scroll: false }); } onOpen(it); }} title={`${it.school} ${it.topic}`}>
                   <span className="cal__ev-subj">{it.subject}</span> <span className="cal__ev-school">{it.school.replace(/등학교|학교/, '')}</span>
                 </button>
               ))}
-              {list.length > max && <button className="cal__more" onClick={() => (onPick ? onPick(k) : onOpen(list[max]))}>+{list.length - max}건</button>}
+              {list.length > max && <button className="cal__more" onClick={onPick ? undefined : () => onOpen(list[max])}>+{list.length - max}건</button>}
             </div>
           );
         })}
