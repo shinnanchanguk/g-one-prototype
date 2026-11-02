@@ -190,10 +190,7 @@ export default function Layout() {
       </div>
       <header className="hdr">
         <div className="hdr__in">
-          <Link to="/" className="logo" aria-label="G-ONE 첫 화면">
-            <span className="logo__mark" aria-hidden />
-            <span className="logo__text"><b>G-ONE</b><small>경기 교원성장플랫폼</small></span>
-          </Link>
+          <Link to="/" className="logo" aria-label="교원성장플랫폼 첫 화면">교원성장<span>플랫폼</span></Link>
           <nav className="gnb" aria-label="주 메뉴">
             {MENU.map((m) => (
               <div key={m.key} className={`gnb__item ${m.util ? 'gnb__item--util' : ''} ${shut === m.key ? 'is-shut' : ''}`} onMouseEnter={() => setShut((k) => (k === m.key ? null : k))} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))} onKeyDown={(e) => { if (e.key === 'Escape') pick(m.key); }}>
@@ -227,7 +224,7 @@ export default function Layout() {
       <footer className="foot">
         <div className="foot__in">
           <div>
-            <span className="logo"><span className="logo__mark" aria-hidden /><span className="logo__text"><b>G-ONE</b><small>경기 교원성장플랫폼 프로토타입</small></span></span>
+            <span className="logo">교원성장<span>플랫폼</span></span>
             <p>비전 · 교사 주도의 자발적 성찰과 동행으로 함께 성장하는 경기교육 공동체</p>
           </div>
           <div className="foot__links">
@@ -248,7 +245,7 @@ export default function Layout() {
         <div className="drawer" onMouseDown={(e) => e.target === e.currentTarget && setMobile(false)}>
           <div className="drawer__panel" role="dialog" aria-label="전체 메뉴">
             <div className="drawer__head">
-              <span className="logo"><span className="logo__mark" aria-hidden /><span className="logo__text"><b>G-ONE</b><small>경기 교원성장플랫폼</small></span></span>
+              <span className="logo">교원성장<span>플랫폼</span></span>
               <button className="iconbtn" onClick={() => setMobile(false)} aria-label="메뉴 닫기"><Icon name="x" /></button>
             </div>
             <button className="drawer__profile" onClick={() => { setMobile(false); setProf(true); }}><Icon name="user" size={16} /><span><b>내 정보</b> {profileLabel(st.s.profile, st.s.profile.office.replace('교육지원청', ''))}</span><Icon name="right" size={14} /></button>
