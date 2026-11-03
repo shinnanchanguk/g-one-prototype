@@ -22,7 +22,7 @@ export const MENU = [
   { key: 'share', label: '나눔', icon: 'heart', tone: 'pink', sub: '지식과 경험을 나누는 공간', items: [
     { to: '/share/classes', code: '3.1', label: '공개수업', desc: '공개 · 참관 · 신청 현황' },
     { to: '/share/communities', code: '3.2', label: '공동체', desc: '찾기 · 만들기 · 나의 공동체' },
-    { to: '/share/outcomes', code: '3.3', label: '성과나눔', desc: '선도 · 실천학교 · 연구년' },
+    { to: '/share/outcomes', code: '3.3', label: '성과나눔', desc: '연구학교 · 실천학교 · 연구년' },
   ] },
   { key: 'together', label: '동행', icon: 'users', tone: 'purple', sub: '함께하는 교육공동체', items: [
     { to: '/together/worries', code: '4.1', label: '쫑알쫑알', desc: '동료와 편하게 이야기 나누기' },

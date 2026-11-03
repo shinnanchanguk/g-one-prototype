@@ -136,7 +136,7 @@ export function Mentors() {
   return (
     <div className="container">
       <PageHead crumbs={['동행', '멘토 찾기 및 신청']} code="4.1 · 멘토 찾기 및 신청" title="멘토 찾기" desc="누구나 멘토이자 멘티가 됩니다. 수석교사, 각종 지원단, 교권보호지원단처럼 검증된 전문가는 우수멘토로 표시되고, 학교 단위 연수 강사 인력풀로도 연결됩니다.">
-        <Link to="/together/instructors" className="btn btn--line"><Icon name="school" size={16} />학교 연수 강사 초빙</Link>
+        <Link to="/together/instructors" className="btn btn--line"><Icon name="school" size={16} />강사 인력풀 보기<Icon name="arrow" size={15} /></Link>
       </PageHead>
       <div className="filters">
         <SearchBox value={q} onChange={setQ} placeholder="이름, 학교, 소개로 찾기" />
@@ -291,7 +291,7 @@ export function Instructors() {
   return (
     <div className="container">
       <PageHead crumbs={['동행', '강사 인력풀']} code="4.1 · 멘토 찾기 및 신청 · 강사 인력풀" title="강사 인력풀" desc="수석교사, 각종 지원단, 교권보호지원단, 영역 전문가 인증을 받은 선생님을 학교 연수 강사로 초빙합니다. 아는 사람을 따로 수소문하지 않아도 주제와 지역으로 찾아 바로 요청할 수 있습니다.">
-        <Link to="/together/mentors" className="btn btn--line"><Icon name="users" size={16} />1:1 멘토 찾기</Link>
+        <Link to="/together/mentors" className="btn btn--line"><Icon name="users" size={16} />멘토 찾기 보기<Icon name="arrow" size={15} /></Link>
       </PageHead>
       <Tabs value={tab} onChange={setTab} className="tabs--page" items={[{ value: 'find', label: `강사 찾기 (${INSTRUCTORS.length})`, icon: 'search' }, { value: 'status', label: `초빙 현황 (${invites.length})`, icon: 'list' }]} />
 

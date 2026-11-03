@@ -395,15 +395,15 @@ export function Outcomes() {
   const [year, setYear] = useState('전체 연도');
   const [open, setOpen] = useState(null);
   const list = OUTCOMES.filter((o) => (kind === '전체' || o.kind === kind) && (year === '전체 연도' || String(o.year) === year) && (!q || (o.title + o.summary + o.school + o.tags.join(' ')).includes(q)));
-  const tone = { 선도학교: 'blue', 실천학교: 'green', 연구년제: 'purple' };
+  const tone = { 연구학교: 'blue', 실천학교: 'green', 연구년제: 'purple' };
   return (
     <div className="container">
-      <PageHead crumbs={['나눔', '성과나눔']} code="3.3 · 성과 나누기 · 살펴보기" title="성과나눔" desc="선도학교, 실천학교, 연구년제의 사례를 한 번에 검색해 찾아봅니다." />
+      <PageHead crumbs={['나눔', '성과나눔']} code="3.3 · 성과 나누기 · 살펴보기" title="성과나눔" desc="연구학교, 실천학교, 연구년제의 사례를 한 번에 검색해 찾아봅니다." />
       <div className="filters">
         <SearchBox value={q} onChange={setQ} placeholder="주제, 학교, 태그로 통합 검색" />
         <Select label="연도" value={year} onChange={setYear} options={['전체 연도', '2026', '2025']} />
       </div>
-      <Tabs size="sm" value={kind} onChange={setKind} items={['전체', '선도학교', '실천학교', '연구년제'].map((k) => ({ value: k, label: `${k} (${OUTCOMES.filter((o) => k === '전체' || o.kind === k).length})` }))} />
+      <Tabs size="sm" value={kind} onChange={setKind} items={['전체', '연구학교', '실천학교', '연구년제'].map((k) => ({ value: k, label: `${k} (${OUTCOMES.filter((o) => k === '전체' || o.kind === k).length})` }))} />
       <div className="ogrid">
         {list.map((o) => (
           <button key={o.id} className={`ocard ocard--${tone[o.kind]}`} onClick={() => setOpen(o)}>
