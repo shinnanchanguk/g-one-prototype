@@ -30,7 +30,7 @@ export const MENU = [
     { to: '/together/instructors', code: '4.1', label: '강사 인력풀', desc: '검증된 강사를 학교 연수에 초빙' },
     { to: '/together/mentoring', code: '4.2', label: '멘토링 현황', desc: '나의 멘토링 과정' },
   ] },
-  { key: 'info', label: '안내', icon: 'info', tone: 'orange', sub: '바로 찾는 교육 정보', util: true, items: [
+  { key: 'info', label: '안내', icon: 'signpost', tone: 'orange', sub: '바로 찾는 교육 정보', items: [
     { to: '/info/about', code: '5.1', label: '소개', desc: '플랫폼과 서비스' },
     { to: '/info/notices', code: '5.2', label: '공지사항', desc: '주요 공지와 소식' },
     { to: '/info/faq', code: '5.3', label: 'FAQ', desc: '자주 묻는 질문' },
@@ -193,7 +193,7 @@ export default function Layout() {
           <Link to="/" className="logo" aria-label="교원성장플랫폼 첫 화면">교원성장<span>플랫폼</span></Link>
           <nav className="gnb" aria-label="주 메뉴">
             {MENU.map((m) => (
-              <div key={m.key} className={`gnb__item ${m.util ? 'gnb__item--util' : ''} ${shut === m.key ? 'is-shut' : ''}`} onMouseEnter={() => setShut((k) => (k === m.key ? null : k))} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))} onKeyDown={(e) => { if (e.key === 'Escape') pick(m.key); }}>
+              <div key={m.key} className={`gnb__item ${shut === m.key ? 'is-shut' : ''}`} onMouseEnter={() => setShut((k) => (k === m.key ? null : k))} onMouseLeave={() => setShut((k) => (k === m.key ? null : k))} onFocus={() => setShut((k) => (k === m.key ? null : k))} onKeyDown={(e) => { if (e.key === 'Escape') pick(m.key); }}>
                 <NavLink to={m.items[0].to} onPointerDown={(e) => { pointer.current = e.pointerType; }} onClick={() => { const t = pointer.current; pointer.current = 'mouse'; if (t !== 'touch') pick(m.key); }} className={({ isActive }) => `gnb__link ${loc.pathname.startsWith(`/${m.key}`) || isActive ? 'is-on' : ''}`}>
                   <span className={`gnb__ico tone-${m.tone}`}><Icon name={m.icon} size={18} /></span>
                   <span className="gnb__txt"><b>{m.label}</b><small>{m.sub}</small></span>

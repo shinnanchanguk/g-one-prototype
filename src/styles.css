@@ -1,4 +1,4 @@
-/* G-ONE 프로토타입 · 크로마(Chroma) 테마
+/* 교원성장플랫폼 프로토타입 · 크로마(Chroma) 테마
    원본: Chroma | Generative System Control (design-26f0523a) + 도름슬라이드 백영고·도름스 탄생비화 덱의 이식본
    종이 바탕 · 필름 그레인 · Space Grotesk/Wanted Sans 제목 · JetBrains Mono 라벨 · 검은 실선 · 알약 버튼 · 24px 패널 */
 
@@ -981,14 +981,14 @@ img.thumb__img[src$="teach2.webp"] { object-position: 25% 80%; }
 
 /* 머리말이 좁아지면 내 정보 칩 값을 줄이고, 더 좁으면 서랍 메뉴(내 정보 버튼이 있다)에만 둔다 */
 @media (min-width: 1181px) and (max-width: 1320px) { .hdr .pchip__v { max-width: 12em; } }
+@media (min-width: 1181px) and (max-width: 1240px) { .hdr .pchip__v { max-width: 9.5em; } }
+@media (min-width: 1321px) and (max-width: 1360px) { .hdr .pchip__v { max-width: 12em; } }
 @media (max-width: 760px) { .hdr .pchip { display: none; } }
 @media (max-width: 360px) { .hdr__search-btn { display: none; } }
 
-/* 교감 선생님 의견: 성장·배움·나눔·동행이 첫 화면에서 바로 읽히게 크게. 안내는 보조 메뉴라 작게 둔다 */
+/* 교감 선생님 의견: 주 메뉴가 첫 화면에서 바로 읽히게 크게. 안내도 같은 크기로 둔다 */
 .gnb__txt b { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
 .gnb__ico { width: 36px; height: 36px; }
-.gnb__item--util .gnb__txt b { font-size: 15px; font-weight: 700; letter-spacing: 0; }
-.gnb__item--util .gnb__ico { width: 28px; height: 28px; }
 
 /* 첫 화면 성장 설계 띠: 검색 줄 바로 아래(스크롤 없이 보이게) */
 .home__soft { margin-top: 0; margin-bottom: 18px; }

@@ -19,7 +19,7 @@ const DIRECTIONS = [
 export function About() {
   return (
     <div className="container">
-      <PageHead crumbs={['안내', '소개']} code="5.1 · 플랫폼 및 서비스 소개" title="G-ONE 교원성장플랫폼" />
+      <PageHead crumbs={['안내', '소개']} code="5.1 · 플랫폼 및 서비스 소개" title="교원성장플랫폼" />
       <section className="vision vision--about">
         <div className="vision__copy">
           <span className="mono c-orange">Ⅰ. 비전</span>
